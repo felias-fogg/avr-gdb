@@ -77,7 +77,7 @@ jobs:
       - name: patch and build
         run: |
           ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
-          mv build/${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
+          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
           tar -xvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb
 
       - name: upload
