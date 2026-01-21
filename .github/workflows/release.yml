@@ -71,7 +71,7 @@ jobs:
 
       - name: patch and build
         run: |
-          ./avr-gdb-build $OS $ARCH
+          ./avr-gdb-build.sh $OS $ARCH
           mv build/${OS}-${ARCH}/bin/avr-gdb .
           tar -xvz --exclude="*DS_Store" --exclude="*/._*" -f ${PERF}.tar.gz avr-gdb
 
