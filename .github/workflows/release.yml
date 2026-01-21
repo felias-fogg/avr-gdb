@@ -30,7 +30,7 @@ jobs:
     needs: check
     strategy:
       matrix:
-        runner: ["ubuntu-24.04", "ubuntu-latest" ] # [ "macos-15-intel", "macos-15", "ubuntu-24.04", "ubuntu-24.04-arm", "ubuntu-latest" ]
+        runner: [ "macos-15-intel", "macos-15", "ubuntu-24.04", "ubuntu-24.04-arm", "ubuntu-latest" ]
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout repo
@@ -78,13 +78,7 @@ jobs:
 
       - name: patch and build 
         run: |
-          mkdir build
-          mkdir build/avr-windows-intel
-          mkdir build/avr-linux-intel
-          mkdir build/avr-windows-intel/bin
-          mkdir build/avr-linux-intel/bin
-          touch build/avr-windows-intel/bin/avr-gdb.exe
-          touch build/avr-linux-intel/bin/avr-gdb
+          ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
           if [[ "${{ env.OS }}" == "windows" ]]; then
             mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb.exe .
             tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb.exe
