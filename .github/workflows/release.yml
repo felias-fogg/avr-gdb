@@ -36,6 +36,8 @@ jobs:
 
       - name: Install packages
         if: matrix.runner == 'ubuntu-24.04' || matrix.runner == 'ubuntu-24.04-arm' || matrix.runner == 'ubuntu-latest'
+        run: |
+          sudo apt-get install wget make mingw-w64 bzip2 xz-utils autoconf texinfo libgmp-dev libmpfr-dev libexpat1-dev
 
       - name: macos-intel
         if: matrix.runner == 'macos-15-intel'
