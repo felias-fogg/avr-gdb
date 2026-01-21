@@ -1,0 +1,75 @@
+From 87daf322f47b419141e007839e8a664a2b32a2ee Mon Sep 17 00:00:00 2001
+From: Bernhard Nebel <nebel@hinterm-ziel.de>
+Date: Sun, 18 Jan 2026 17:13:47 +0100
+Subject: [PATCH] PR gdb/33788 Mask out non-zero unused bit in the program
+ counter of AVR targets
+
+Some AVR MCUs have non-zero unused program counter bits. For the ATmega16 and
+ATmega64, this is documented in the data sheets in the Section on the "Stack Pointer".
+Apparently, other MCUs, such as ATmega329 and ATmega3250 suffer from that problem as well.
+This leads to problems when GDB retrieves the return address from the stack, e.g.,
+when a backtrace is shown or when a temporary breakpoint is set for stepping over
+a function call. In order to mitigate this problem, every time GDB reads a value that
+represents a program counter, a mask should be applied, so that only used bits are
+considered. The mask is computed based on the memory map supplied by the remote server
+using a call to lookup_mem_region(0), which will deliver the flash memory space
+boaudaries. If the memory map is not supplied, we fall back to the original behavior.
+Since it only masks out unused bits, it works, of course, also for MCUs that have all
+their unused PC bits set to zero.
+
+The patch has been tested on an ATmega329, Atmega16, and ATmega328P using Atmel-ICE and
+my own remote server PyAvrOCD (https://pyavrocd.io).
+---
+ gdb/avr-tdep.c | 25 +++++++++++++++++++++++--
+ 1 file changed, 23 insertions(+), 2 deletions(-)
+
+diff --git a/gdb/avr-tdep.c b/gdb/avr-tdep.c
+index fe0283f1b48..132b0cdb223 100644
+--- a/gdb/avr-tdep.c
++++ b/gdb/avr-tdep.c
+@@ -38,6 +38,7 @@
+ #include "objfiles.h"
+ #include <algorithm>
+ #include "gdbarch.h"
++#include "memattr.h"
+ 
+ /* AVR Background:
+ 
+@@ -240,12 +241,32 @@ avr_register_type (struct gdbarch *gdbarch, int reg_nr)
+   return builtin_type (gdbarch)->builtin_uint8;
+ }
+ 
+-/* Instruction address checks and conversions.  */
++/* Mask out unused bits in flash memory addresses in order to allow for correct
++   backtraces. This needs to be done for ATmega16, ATmega64, ATmega329, and ATmega3250.
++   For ATmega16 and 64, this is documented in the data sheets, but apparently
++   happens also for other chips.
++   The code below works only when the memory map is supplied by the remote server.
++   In other words, for older servers or GDB compiled without expat, the problem
++   is unsolved, and backtraces will fail. */
++
++static CORE_ADDR
++avr_pc_mask(void)
++{
++  static CORE_ADDR pcmask = 0;
++  if (pcmask == 0) {
++    struct mem_region *m = lookup_mem_region(0); /* determine flash space */
++    pcmask = m->hi-1;
++  }
++  return pcmask;
++}
++
++
++/* Instruction address checks and conversions.	*/
+ 
+ static CORE_ADDR
+ avr_make_iaddr (CORE_ADDR x)
+ {
+-  return ((x) | AVR_IMEM_START);
++  return ((x & avr_pc_mask()) | AVR_IMEM_START);
+ }
+ 
+ /* FIXME: TRoth: Really need to use a larger mask for instructions.  Some
+-- 
+2.52.0
+

@@ -1,0 +1,49 @@
+From 534b626b1c5a56fc7cce55f0dc24751ca8e535b5 Mon Sep 17 00:00:00 2001
+From: Bernhard Nebel <nebel@hinterm-ziel.de>
+Date: Sun, 18 Jan 2026 12:01:24 +0100
+Subject: [PATCH] PR gdb/16674 Fixes prologue parsing for AVR targets: Permit
+ the usage of 'sbc  r29, r1'
+
+The prologue parsing for AVR targets is at some points too restrictive.
+In this particular case, it assumes that for the computation of the size
+of the stack frame, there will be the instruction SBCI r29, HI8(XX) in the
+prologue, even when XX is zero. However, the compiler uses in this case
+instead the equivalent SBC r29, r1 (r1 containing always zero). This patch
+recognizes this situation and will not add anything to the size variable.
+
+The patch has been tested on an ATmega128 using an ATmel-ICE and my own remote server PyAvrOCD (https://pyavrocd.io).
+---
+ gdb/avr-tdep.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/gdb/avr-tdep.c b/gdb/avr-tdep.c
+index fe0283f1b48..42a46b1cb17 100644
+--- a/gdb/avr-tdep.c
++++ b/gdb/avr-tdep.c
+@@ -435,11 +435,12 @@ avr_pseudo_register_write (struct gdbarch *gdbarch, struct regcache *regcache,
+      3) the offsets of saved regs
+    This information is stored in the avr_unwind_cache structure.
+ 
+-   Some devices lack the sbiw instruction, so on those replace this:
++   Some devices lack the sbiw instruction or the offset is > 63, so replace this:
+ 	sbiw    r28, XX
+    with this:
+ 	subi    r28,lo8(XX)
+ 	sbci    r29,hi8(XX)
++   Alternatively, 'sbci    r29,hi8(XX)' could instead be 'sbc     r29,r1'
+ 
+    A typical AVR function prologue with a frame pointer might look like this:
+ 	push    rXX        ; saved regs
+@@ -829,7 +830,8 @@ avr_scan_prologue (struct gdbarch *gdbarch, CORE_ADDR pc_beg, CORE_ADDR pc_end,
+ 	  vpc += 2;
+ 	  insn = extract_unsigned_integer (&prologue[vpc], 2, byte_order);
+ 	  vpc += 2;
+-	  locals_size += ((insn & 0xf) | ((insn & 0xf00) >> 4)) << 8;
++	  if (insn != 0x09d1) /* add MSB only if insn != "sbci r29, r1" */
++	    locals_size += ((insn & 0xf) | ((insn & 0xf00) >> 4)) << 8;
+ 	}
+       else
+ 	return pc_beg + vpc;
+-- 
+2.52.0
+
