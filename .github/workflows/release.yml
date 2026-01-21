@@ -113,11 +113,14 @@ jobs:
           rm -rf assets
           mkdir assets
 
-      - name: Download x86_64-gnu-linux
+      - name: Download artifacts
         uses: actions/download-artifact@v7
         with:
           merge-multiple: true
           path: assets
+
+      - name: List artifacts
+        run: ls -la assets/*
 
       - name: Asset upload
         if: ${{ github.event.release.tag_name != '' }}
