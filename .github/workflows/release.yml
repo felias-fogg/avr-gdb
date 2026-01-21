@@ -76,14 +76,16 @@ jobs:
 
       - name: patch and build 
         run: |
-          ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
+#          ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
+          touch build/avr-windows-intel/bin/avr-gdb.exe
+          touch build/avr-linux-intel/bin/avr-gdb
           if [[ "{{ env.OS }}" == "windows" ]]; then
-             EXT=".exe"
+            mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb.exe .
+            tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb.exe
           else
-             EXT=""
+            mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
+            tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb
           fi
-          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb${EXT} .
-          tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb${EXT}
 
       - name: upload
         uses: actions/upload-artifact@v4
