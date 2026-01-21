@@ -1,0 +1,81 @@
+# Triggered by a new release, will create new binaries
+name: Release workflow
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  check:
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Test release version against system version
+        run: |
+          VER=v$(cat VERSION)
+          REL=${{ github.event.release.name }}
+          echo "Github release name: $REL"
+          echo "AVR-GDB version: $VER"
+          if [ "x$VER" != "x$REL" ]; then
+             echo "Release version does not match system version"
+             exit 1
+          fi
+          echo "Release and system version are identical, now we continue"
+
+  build:
+    needs: check
+    strategy:
+      matrix:
+        runner: ["ubuntu-24.04" ] # [ "macos-15-intel", "macos-15", "ubuntu-24.04", "ubuntu-24.04-arm", "ubuntu-latest" ]
+      runs-on: ${{ matrix.runner }}
+      steps:
+        - name: Checkout repo
+          uses: actions/checkout@v4
+
+        - name: macos-intel
+          if: matrix.runner == "macos-15-intel"
+          OS="macos"
+          ARCH="intel"
+          PREF="x86_64-apple-darwin"
+
+        - name: macos-arm
+          if: matrix.runner == "macos-15"
+          OS="macos"
+          ARCH="arm"
+          PREF="arm64-apple-darwin"
+
+        - name: linux-intel
+          if: matrix.runner == "ubuntu-24.04"
+          OS="linux"
+          ARCH="intel"
+          PREF="x86_64-linux-gnu"
+
+        - name: linux-arm
+          if: matrix.runner == "ubuntu-24.04-arm"
+          OS="linux"
+          ARCH="arm"
+          PREF="aarch64-linux-gnu"
+
+        - name: windows
+          if: matrix.runner == "ubuntu-latest"
+          OS="windows"
+          ARCH="intel"
+          PREF="x86_64-mingw32"
+
+        - name: patch and build
+          if: "x${PREF}" != "x"
+          run: |
+            ./avr-gdb-build $OS $ARCH
+            mv build/${OS}-${ARCH}/bin/avr-gdb .
+            tar -xvz --exclude="*DS_Store" --exclude="*/._*" -f ${PERF}.tar.gz avr-gdb
+
+        - name: upload
+          if: "x${PREF}" != "x"
+          uses: actions/upload-artifact@v4
+          with:
+            name: $PREF
+            patch: $PREF.tar.gz
+            overwrite: true
+            if-no-files-found: error
