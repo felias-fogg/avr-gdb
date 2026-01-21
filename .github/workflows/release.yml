@@ -119,6 +119,7 @@ jobs:
           path: assets
 
       - name: Asset upload
+        if: ${{ github.event.release.tag_name != '' }}
         uses: softprops/action-gh-release@v2
         with:
           files: assets/*
