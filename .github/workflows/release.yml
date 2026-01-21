@@ -75,7 +75,6 @@ jobs:
           echo "PREF=x86_64-mingw32" >> $GITHUB_ENV
 
       - name: patch and build 
-        #          ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
         run: |
           touch build/avr-windows-intel/bin/avr-gdb.exe
           touch build/avr-linux-intel/bin/avr-gdb
