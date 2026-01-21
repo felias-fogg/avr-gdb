@@ -62,15 +62,20 @@ jobs:
             ARCH="arm"
             PREF="aarch64-linux-gnu"
 
+        - name: windows
+          if: matrix.runner == 'ubuntu-latest'
+          run: |
+            OS="windows"
+            ARCH="intel"
+            PREF="x86_64-mingw32"
+
         - name: patch and build
-          if: 'x${PREF}' != 'x'
           run: |
             ./avr-gdb-build $OS $ARCH
             mv build/${OS}-${ARCH}/bin/avr-gdb .
             tar -xvz --exclude="*DS_Store" --exclude="*/._*" -f ${PERF}.tar.gz avr-gdb
 
         - name: upload
-          if: 'x${PREF}' != 'x'
           uses: actions/upload-artifact@v4
           with:
             name: $PREF
