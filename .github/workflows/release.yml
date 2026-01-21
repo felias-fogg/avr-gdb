@@ -35,42 +35,42 @@ jobs:
           uses: actions/checkout@v4
 
         - name: macos-intel
-          if: matrix.runner == "macos-15-intel"
+          if: matrix.runner == 'macos-15-intel'
           run: |
             OS="macos"
             ARCH="intel"
             PREF="x86_64-apple-darwin"
 
         - name: macos-arm
-          if: matrix.runner == "macos-15"
+          if: matrix.runner == 'macos-15'
           run: |
             OS="macos"
             ARCH="arm"
             PREF="arm64-apple-darwin"
 
         - name: linux-intel
-          if: matrix.runner == "ubuntu-24.04"
+          if: matrix.runner == 'ubuntu-24.04'
           run: |
             OS="linux"
             ARCH="intel"
             PREF="x86_64-linux-gnu"
 
         - name: linux-arm
-          if: matrix.runner == "ubuntu-24.04-arm"
+          if: matrix.runner == 'ubuntu-24.04-arm'
           run: |
             OS="linux"
             ARCH="arm"
             PREF="aarch64-linux-gnu"
 
         - name: patch and build
-          if: "x${PREF}" != "x"
+          if: 'x${PREF}' != 'x'
           run: |
             ./avr-gdb-build $OS $ARCH
             mv build/${OS}-${ARCH}/bin/avr-gdb .
             tar -xvz --exclude="*DS_Store" --exclude="*/._*" -f ${PERF}.tar.gz avr-gdb
 
         - name: upload
-          if: "x${PREF}" != "x"
+          if: 'x${PREF}' != 'x'
           uses: actions/upload-artifact@v4
           with:
             name: $PREF
