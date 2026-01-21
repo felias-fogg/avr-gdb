@@ -116,7 +116,6 @@ jobs:
       - name: Download x86_64-gnu-linux
         uses: actions/download-artifact@v7
         with:
-          pattern: *
           merge-multiple: true
           path: assets
 
