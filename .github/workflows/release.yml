@@ -28,7 +28,7 @@ jobs:
     needs: check
     strategy:
       matrix:
-        runner: ["ubuntu-24.04" ] # [ "macos-15-intel", "macos-15", "ubuntu-24.04", "ubuntu-24.04-arm", "ubuntu-latest" ]
+        runner: ["ubuntu-24.04", "ubuntu-latest" ] # [ "macos-15-intel", "macos-15", "ubuntu-24.04", "ubuntu-24.04-arm", "ubuntu-latest" ]
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout repo
@@ -42,16 +42,16 @@ jobs:
       - name: macos-intel
         if: matrix.runner == 'macos-15-intel'
         run: |
-          OS="macos"
-          ARCH="intel"
-          PREF="x86_64-apple-darwin"
+          echo "OS=macos" >> $GITHUB_ENV
+          echo "ARCH=intel" >> $GITHUB_ENV
+          echo "PREF=x86_64-apple-darwin" >> $GITHUB_ENV
 
       - name: macos-arm
         if: matrix.runner == 'macos-15'
         run: |
-          OS="macos"
-          ARCH="arm"
-          PREF="arm64-apple-darwin"
+          echo "OS=macos" >> $GITHUB_ENV
+          echo "ARCH=arm" >> $GITHUB_ENV
+          echo "PREF=arm64-apple-darwin" >> $GITHUB_ENV
 
       - name: linux-intel
         if: matrix.runner == 'ubuntu-24.04'
@@ -63,22 +63,27 @@ jobs:
       - name: linux-arm
         if: matrix.runner == 'ubuntu-24.04-arm'
         run: |
-          OS="linux"
-          ARCH="arm"
-          PREF="aarch64-linux-gnu"
+          echo "OS=linux" >> $GITHUB_ENV
+          echo "ARCH=arm" >> $GITHUB_ENV
+          echo "PREF=aarch64-linux-gnu" >> $GITHUB_ENV
 
       - name: windows
         if: matrix.runner == 'ubuntu-latest'
         run: |
-          OS="windows"
-          ARCH="intel"
-          PREF="x86_64-mingw32"
+          echo "OS=windows" >> $GITHUB_ENV
+          echo "ARCH=intel" >> $GITHUB_ENV
+          echo "PREF=x86_64-mingw32" >> $GITHUB_ENV
 
-      - name: patch and build
+      - name: patch and build 
         run: |
           ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
-          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
-          tar -xvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb
+          if [[ "{{ env.OS }}" == "windows" ]]; then
+             EXT=".exe"
+          else
+             EXT=""
+          fi
+          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb${EXT} .
+          tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb${EXT}
 
       - name: upload
         uses: actions/upload-artifact@v4
