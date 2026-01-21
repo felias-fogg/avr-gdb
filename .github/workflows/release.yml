@@ -51,9 +51,9 @@ jobs:
       - name: linux-intel
         if: matrix.runner == 'ubuntu-24.04'
         run: |
-          OS="linux"
-          ARCH="intel"
-          PREF="x86_64-linux-gnu"
+          echo "OS=linux" >> $GITHUB_ENV
+          echo "ARCH=intel" >> $GITHUB_ENV
+          echo "PREF=x86_64-linux-gnu" >> $GITHUB_ENV
 
       - name: linux-arm
         if: matrix.runner == 'ubuntu-24.04-arm'
@@ -71,14 +71,14 @@ jobs:
 
       - name: patch and build
         run: |
-          ./avr-gdb-build.sh $OS $ARCH
-          mv build/${OS}-${ARCH}/bin/avr-gdb .
-          tar -xvz --exclude="*DS_Store" --exclude="*/._*" -f ${PERF}.tar.gz avr-gdb
+          ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
+          mv build/${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
+          tar -xvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb
 
       - name: upload
         uses: actions/upload-artifact@v4
         with:
-          name: $PREF
-          path: $PREF.tar.gz
+          name: ${{ env.PREF }}
+          path: ${{ env.PREF }}.tar.gz
           overwrite: true
           if-no-files-found: error
