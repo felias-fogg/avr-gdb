@@ -10,7 +10,7 @@ jobs:
     runs-on: "ubuntu-latest"
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Test release version against system version
         run: |
@@ -32,7 +32,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install packages
         if: matrix.runner == 'ubuntu-24.04' || matrix.runner == 'ubuntu-24.04-arm' || matrix.runner == 'ubuntu-latest'
@@ -98,3 +98,25 @@ jobs:
           path: ${{ env.PREF }}.tar.gz
           overwrite: true
           if-no-files-found: error
+
+  upload:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v5
+
+      - name: Create subdir
+        run: |
+          rm -rf assets
+          mkdir assets
+
+      - name: Download x86_64-gnu-linux
+        uses: actions/download-artifact@v7
+        with:
+          path: assets
+
+      - name: Asset upload
+        uses: softprops/action-gh-release@v2
+        with:
+          files: assets/*
