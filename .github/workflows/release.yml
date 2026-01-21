@@ -57,7 +57,7 @@ jobs:
 
         - name: linux-arm
           if: matrix.runner == "ubuntu-24.04-arm"
-          run:
+          run: |
             OS="linux"
             ARCH="arm"
             PREF="aarch64-linux-gnu"
