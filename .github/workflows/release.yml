@@ -76,6 +76,11 @@ jobs:
 
       - name: patch and build 
         run: |
+          mkdir build
+          mkdir build/avr-windows-intel
+          mkdir build/avr-linux-intel
+          mkdir build/avr-windows-intel/bin
+          mkdir build/avr-linux-intel/bin
           touch build/avr-windows-intel/bin/avr-gdb.exe
           touch build/avr-linux-intel/bin/avr-gdb
           if [[ "{{ env.OS }}" == "windows" ]]; then
