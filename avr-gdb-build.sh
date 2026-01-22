@@ -37,11 +37,11 @@ if [[ $OS == "windows" ]]; then
 elif [[ $OS == "macos" ]] && [[ $arch == "intel" ]]; then
     HOST="--host=x86_64-apple-darwin --build=x86_64-apple-darwin"
 elif [[ $OS == "macos" ]] && [[ $arch == "arm" ]]; then
-    HOST="--host=arm64-apple-darwin --build=x86_64-apple-darwin"
+    HOST="--host=arm64-apple-darwin --build=arm64-apple-darwin"
 fi
 
 # macOS on Intel hardware cannot use the assembly variant in GMP
-if [[ $OS == "macos" ]] && [[ $ARCH == "xintel" ]]; then
+if [[ $OS == "macos" ]] && [[ $ARCH == "intel" ]]; then
     ASSEMBLY="--disable-assembly"
 else
     ASSEMBLY=""
