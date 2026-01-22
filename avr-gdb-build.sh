@@ -118,12 +118,17 @@ log()
 
 installPackages()
 {
-	local requiredPackages=("wget" "make" "mingw-w64" "bzip2" "xz-utils" "autoconf" "texinfo" "libgmp-dev" "libmpfr-dev" "libexpat1-dev")
-
-	if [[ $EUID -ne 0 ]]; then
+        if [[ $OS == "windows" ]]; then
+            local required=("wget" "make" "mingw-w64" "bzip2" "xz-utils" "autoconf" "texinfo" "libgmp-dev" "libmpfr-dev" "libexpat1-dev")
+        elif [[ $OS == "linux" ]]; then
+            local required=("wget" "make" "bzip2" "xz-utils" "autoconf" "texinfo" "libgmp-dev" "libmpfr-dev" "libexpat1-dev")
+        else
+            local required=( "texinfo" )
+        fi
+	if [[ $EUID -ne 0 ]] && [[ $OS != "macos" ]]; then
 		log "Not running as root user. Checking whether all required packages are installed..."
 		local packageMissing=0
-		for package in "${requiredPackages[@]}"
+		for package in "${required[@]}"
 		do
 			if ! dpkg -s "$package" > /dev/null 2>&1; then
 				echo "ERROR: Package \"$package\" is not installed. But it is required." 1>&2
@@ -137,10 +142,14 @@ installPackages()
 		fi
 
 		echo "All required packages are installed. Continuing..."
-	else
+	elif [[ $OS != "macos" ]]; then
 		log "Running as root user. Installing required packages via apt..."
 		apt update
-		apt install "${requiredPackages[@]}"
+		apt install "${required[@]}"
+        elif hash brew 2>/dev/null; then
+                brew install "${required[@]}"
+        else
+                echo "You need to install Homebrew first"
 	fi
 }
 
@@ -270,9 +279,7 @@ buildGDB()
 	echo "" > /dev/null
 }
 
-if [ $OS = "linux" ]; then
-    installPackages
-fi
+installPackages
 
 log "Start"
 
