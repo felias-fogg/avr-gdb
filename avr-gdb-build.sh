@@ -35,9 +35,9 @@ CWD=$(pwd)
 if [[ $OS == "windows" ]]; then
     HOST="--host=x86_64-w64-mingw32"
 elif [[ $OS == "macos" ]] && [[ $arch == "intel" ]]; then
-    HOST="--host=x86_64-apple-darwin"
+    HOST="--host=x86_64-apple-darwin --build=x86_64-apple-darwin"
 elif [[ $OS == "macos" ]] && [[ $arch == "arm" ]]; then
-    HOST="--host=arm64-apple-darwin"
+    HOST="--host=arm64-apple-darwin --build=x86_64-apple-darwin"
 fi
 
 # macOS on Intel hardware cannot use the assembly variant in GMP
@@ -155,7 +155,7 @@ cleanup()
 	log "Clearing output directories..."
 	makeDir "$PREFIX"
 
-	log "Clearing old downloads..."
+	log "Clearing old download directories..."
         makeDir "$PREFIX"
         rm -rf $TMP_DIR
 	#rm -f $NAME_GDB.tar.xz
