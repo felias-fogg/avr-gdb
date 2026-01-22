@@ -3,7 +3,7 @@
 usage()
 {
     echo "usage: ./avr-gdb-build <os> <arch>"
-    echo "  with <os> one of { windows, macos, linux }"
+    echo "  with <os> one of { windows32, windows64, macos, linux }"
     echo "  and  <arch> one of { arm, intel }"
     echo "Note: Only Windows is cross-compiled"
 }
@@ -17,7 +17,7 @@ usage()
 # Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
 # http://creativecommons.org/licenses/by-sa/4.0/
 
-if [[ "x$1" != "xwindows" ]] && [[ "x$1" != "xmacos" ]] &&  [[ "x$1" != "xlinux" ]]; then
+if [[ "x$1" != "xwindows32" ]] && [[ "x$1" != "xwindows64" ]] && [[ "x$1" != "xmacos" ]] &&  [[ "x$1" != "xlinux" ]]; then
     usage
     exit 1
 fi
@@ -32,8 +32,10 @@ CWD=$(pwd)
 
 # Only Windows binaries are cross compiled, but for apple we need
 # to specify it nevertheless so that GMP get compiled right
-if [[ $OS == "windows" ]]; then
+if [[ $OS == "windows32" ]]; then
     HOST="--host=i686-w64-mingw32"
+elif [[ $OS == "windows64" ]]; then
+    HOST="--host=x86_64-w64-mingw32"
 elif [[ $OS == "macos" ]] && [[ $arch == "intel" ]]; then
     HOST="--host=x86_64-apple-darwin --build=x86_64-apple-darwin"
 elif [[ $OS == "macos" ]] && [[ $arch == "arm" ]]; then
@@ -118,7 +120,7 @@ log()
 
 installPackages()
 {
-        if [[ $OS == "windows" ]]; then
+        if [[ $OS == "windows32" ]] || [[ $OS == "windows64" ]]; then
             local required=("wget" "make" "mingw-w64" "bzip2" "xz-utils" "autoconf" "texinfo" "libgmp-dev" "libmpfr-dev" "libexpat1-dev")
         elif [[ $OS == "linux" ]]; then
             local required=("wget" "make" "bzip2" "xz-utils" "autoconf" "texinfo" "libgmp-dev" "libmpfr-dev" "libexpat1-dev")
@@ -185,7 +187,7 @@ downloadSources()
         if [ ! -f $NAME_GDB.tar.xz ]; then 
 	    wget https://ftpmirror.gnu.org/gdb/$NAME_GDB.tar.xz
         fi
-	if [[ $OS == "windows" ]] || [[ $OS == "macos" ]]; then
+	if [[ $OS != "linux"  ]]; then
 	        log "$NAME_GMP"
                 if [ ! -f $NAME_GMP.tar.xz ]; then 
 		    wget https://ftpmirror.gnu.org/gmp/$NAME_GMP.tar.xz

@@ -1,6 +1,6 @@
 # Build mostly static patched AVR-GDB
 
-The script `avr-gdb-build.sh` can be used to build a mostly static version of `avr-gdb` locally, which incorporates patches that reside in the main folder. *Mostly static* means that it is completely static for Linux, it depends only on a few system libraries (but nothing from Homebrew) under macOS, and only dynamic system libraries under Windows. The script is designed to build for the machine the script is executed on. However, in order to create a 32-bit Windows version, you need to cross-compile it under Linux.
+The script `avr-gdb-build.sh` can be used to build a mostly static version of `avr-gdb` locally, which incorporates patches that reside in the main folder. *Mostly static* means that it is completely static for Linux, it depends only on a few system libraries (but nothing from Homebrew) under macOS, and only dynamic system libraries under Windows. The script is designed to build for the machine the script is executed on. However, in order to create the Windows versions, you need to cross-compile it under Linux.
 
 The result of running this script will be stored under `build/avr-<os>-<arch>/`.
 

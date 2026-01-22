@@ -30,7 +30,7 @@ jobs:
     needs: check
     strategy:
       matrix:
-        runner: [ "macos-15-intel", "macos-15", "ubuntu-24.04", "ubuntu-24.04-arm", "ubuntu-latest" ]
+        runner: [ "macos-15-intel", "macos-15", "ubuntu-24.04", "ubuntu-24.04-arm", "ubuntu-latest", "ubuntu-22.04" ]
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout repo
@@ -69,17 +69,24 @@ jobs:
           echo "ARCH=arm" >> $GITHUB_ENV
           echo "PREF=aarch64-linux-gnu" >> $GITHUB_ENV
 
-      - name: windows
+      - name: windows32
         if: matrix.runner == 'ubuntu-latest'
         run: |
-          echo "OS=windows" >> $GITHUB_ENV
+          echo "OS=windows32" >> $GITHUB_ENV
           echo "ARCH=intel" >> $GITHUB_ENV
           echo "PREF=i686-mingw32" >> $GITHUB_ENV
+
+      - name: windows64
+        if: matrix.runner == 'ubuntu-22.04'
+        run: |
+          echo "OS=windows64" >> $GITHUB_ENV
+          echo "ARCH=intel" >> $GITHUB_ENV
+          echo "PREF=x86_64-mingw32" >> $GITHUB_ENV
 
       - name: patch and build 
         run: |
           ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
-          if [[ "${{ env.OS }}" == "windows" ]]; then
+          if [[ "${{ env.OS }}" == "windows32" ]] ||  [[ "${{ env.OS }}" == "windows64" ]]; then
             mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb.exe .
             tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb.exe
           else
