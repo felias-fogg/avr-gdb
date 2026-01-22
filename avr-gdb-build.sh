@@ -33,7 +33,7 @@ CWD=$(pwd)
 # Only Windows binaries are cross compiled, but for apple we need
 # to specify it nevertheless so that GMP get compiled right
 if [[ $OS == "windows" ]]; then
-    HOST="--host=x86_64-w64-mingw32"
+    HOST="--host=i686-w64-mingw32"
 elif [[ $OS == "macos" ]] && [[ $arch == "intel" ]]; then
     HOST="--host=x86_64-apple-darwin --build=x86_64-apple-darwin"
 elif [[ $OS == "macos" ]] && [[ $arch == "arm" ]]; then

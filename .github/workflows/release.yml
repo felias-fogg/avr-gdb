@@ -74,7 +74,7 @@ jobs:
         run: |
           echo "OS=windows" >> $GITHUB_ENV
           echo "ARCH=intel" >> $GITHUB_ENV
-          echo "PREF=x86_64-mingw32" >> $GITHUB_ENV
+          echo "PREF=i686-mingw32" >> $GITHUB_ENV
 
       - name: patch and build 
         run: |
