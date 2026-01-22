@@ -5,6 +5,7 @@ usage()
     echo "usage: ./avr-gdb-build <os> <arch>"
     echo "  with <os> one of { windows, macos, linux }"
     echo "  and  <arch> one of { arm, intel }"
+    echo "Note: Only Windows is cross-compiled"
 }
 
 
@@ -27,9 +28,21 @@ fi
 
 OS=$1
 ARCH=$2
-
-
 CWD=$(pwd)
+
+# Only Windows binaries are cross compiled, here we need the host option
+if [[ $OS == "windows" ]]; then
+    HOST="--host=x86_64-w64-mingw32"
+else
+    HOST=""
+fi
+
+# macOS on Intel hardware cannot use the assembly variant in GMP
+if [[ $OS == "macos" ]] && [[ $ARCH == "intel" ]]; then
+    ASSEMBLY="--disable-assembly"
+else
+    ASSEMBLY=""
+fi
 
 # ++++ Error Handling and Backtracing ++++
 set -eE -o functrace
@@ -223,34 +236,29 @@ buildGDB()
 		confMake "$PREFIX" "$OPTS_GDB"
 		cd ../../
 	else
-                if [[ $OS == "windows" ]]; then
-                    HOST="--host=x86_64-w64-mingw32"
-                else
-                    HOST=""
-                fi
 		log "GMP..."
 		cd $NAME_GMP/obj
-		confMake $TMP_DIR/$OS "--enable-static --disable-shared" $HOST
+		confMake $TMP_DIR/$OS-$ARCH "--enable-static --disable-shared ${ASSEMBLY}" $HOST
 		cd ../../
 		
 		log "MPFR..."
 		cd $NAME_MPFR/obj
-		confMake $TMP_DIR/$OS "--with-gmp=${TMP_DIR}/${OS} --disable-shared --enable-static" $HOST
+		confMake $TMP_DIR/$OS-$ARCH "--with-gmp=${TMP_DIR}/${OS}-${ARCH} --disable-shared --enable-static" $HOST
 		cd ../../
 
 		log "Expat..."
 		cd ${NAME_EXPAT[1]}/obj
                 if [[ $OS == "macos" ]]; then 
-		    confMake $TMP_DIR/$OS "--disable-shared --enable-static" 
+		    confMake $TMP_DIR/$OS-$ARCH "--disable-shared --enable-static" 
                 else
-		    confMake $TMP_DIR/$OS "--disable-shared --enable-static" $HOST "../conftools/config.guess"
+		    confMake $TMP_DIR/$OS-$ARCH "--disable-shared --enable-static" $HOST "../conftools/config.guess"
                 fi
 		cd ../../
 
 
 		log "GDB..."
 		cd $NAME_GDB/obj-avr
-		confMake "$PREFIX" "--enable-static --disable-shared --with-gmp=${TMP_DIR}/${OS} --with-mpfr=${TMP_DIR}/${OS} --with-libexpat-prefix=${TMP_DIR}/${OS} ${OPTS_GDB}" $HOST
+		confMake "$PREFIX" "--enable-static --disable-shared --with-gmp=${TMP_DIR}/${OS}-${ARCH} --with-mpfr=${TMP_DIR}/${OS}-${ARCH} --with-libexpat-prefix=${TMP_DIR}/${OS}-${ARCH} ${OPTS_GDB}" $HOST
 		cd ../../
 	fi
 
