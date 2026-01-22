@@ -30,15 +30,18 @@ OS=$1
 ARCH=$2
 CWD=$(pwd)
 
-# Only Windows binaries are cross compiled, here we need the host option
+# Only Windows binaries are cross compiled, but for apple we need
+# to specify it nevertheless so that GMP get compiled right
 if [[ $OS == "windows" ]]; then
     HOST="--host=x86_64-w64-mingw32"
-else
-    HOST=""
+elif [[ $OS == "macos" ]] && [[ $arch == "intel" ]]; then
+    HOST="--host=x86_64-apple-darwin"
+elif [[ $OS == "macos" ]] && [[ $arch == "arm" ]]; then
+    HOST="--host=arm64-apple-darwin"
 fi
 
 # macOS on Intel hardware cannot use the assembly variant in GMP
-if [[ $OS == "macos" ]] && [[ $ARCH == "intel" ]]; then
+if [[ $OS == "macos" ]] && [[ $ARCH == "xintel" ]]; then
     ASSEMBLY="--disable-assembly"
 else
     ASSEMBLY=""
@@ -249,7 +252,7 @@ buildGDB()
 		log "Expat..."
 		cd ${NAME_EXPAT[1]}/obj
                 if [[ $OS == "macos" ]]; then 
-		    confMake $TMP_DIR/$OS-$ARCH "--disable-shared --enable-static" 
+		    confMake $TMP_DIR/$OS-$ARCH "--disable-shared --enable-static" $HOST
                 else
 		    confMake $TMP_DIR/$OS-$ARCH "--disable-shared --enable-static" $HOST "../conftools/config.guess"
                 fi
