@@ -234,7 +234,7 @@ buildGDB()
 {
 	log "***GDB (and GMP, MPFR, Expat for Windows/macOS)***"
 	mkdir -p $NAME_GDB/obj-avr
-	if [[ $OS == "windows" ]] || [[ $OS == "macos" ]]; then
+	if [[ $OS == "windows32" ]] || [[ $OS == "windows64" ]] || [[ $OS == "macos" ]]; then
             	log "Extracting libs ..."
 		tar xf $NAME_GMP.tar.xz
 		mkdir -p $NAME_GMP/obj
