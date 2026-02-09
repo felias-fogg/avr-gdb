@@ -106,6 +106,7 @@ OPTS_GDB="
         --without-python
         --without-guile
         --with-static-standard-libraries
+        --with-system-zlib
 "
 # --disable-source-highlight
 
