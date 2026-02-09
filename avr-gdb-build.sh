@@ -160,7 +160,10 @@ installPackages()
 		apt update
 		apt install "${required[@]}"
         elif hash brew 2>/dev/null; then
-                brew install "${required[@]}"
+	    for package in "${required[@]}"
+	    do
+                brew list $package || brew install $package
+	    done
         else
                 echo "You need to install Homebrew first"
 	fi
@@ -282,6 +285,8 @@ buildGDB()
 
                 if  [[ $OS == "macos" ]]; then
                     brew uninstall --ignore-dependencies zstd
+                    brew uninstall --ignore-dependencies gettext
+                    brew uninstall --ignore-dependencies xz
                 fi
                 
 		log "GDB..."
