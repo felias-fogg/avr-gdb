@@ -99,15 +99,25 @@ if [[ $OS == "linux" ]]; then
 fi
 export CXXFLAGS="${CXXFLAGS} -D_WIN32_WINNT=0x0600"
 
-OPTS_GDB="
+if [[ $OS == "macos" ]]; then
+    OPTS_GDB="
+    	--target=avr
+	--with-static-standard-libraries
+	--with-expat
+        --without-python
+        --without-guile
+        --with-system-zlib
+    "
+else    
+    OPTS_GDB="
 	--target=avr
 	--with-static-standard-libraries
 	--with-expat
         --without-python
         --without-guile
-        --with-static-standard-libraries
-        --with-system-zlib
-"
+    "
+fi
+
 # --disable-source-highlight
 
 TMP_DIR=${CWD}/tmp
