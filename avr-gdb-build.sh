@@ -280,7 +280,10 @@ buildGDB()
                 fi
 		cd ../../
 
-
+                if  [[ $OS == "macos" ]]; then
+                    brew uninstall --ignore-dependencies zstd
+                fi
+                
 		log "GDB..."
 		cd $NAME_GDB/obj-avr
 		confMake "$PREFIX" "--enable-static --disable-shared --with-gmp=${TMP_DIR}/${OS}-${ARCH} --with-mpfr=${TMP_DIR}/${OS}-${ARCH} --with-libexpat-prefix=${TMP_DIR}/${OS}-${ARCH} ${OPTS_GDB}" $HOST
