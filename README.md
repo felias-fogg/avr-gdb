@@ -6,3 +6,8 @@ The result of running this script will be stored under `build/avr-<os>-<arch>/`.
 
 The result of the latest CI run can be found as assets of the [latest release](https://github.com/felias-fogg/avr-gdb/releases/latest). These are used as part of the avrocd tools for debug-enabled Arduino platform packages (see [https://pyavrocd.io](https://pyavrocd.io))
 
+## Generating a patch
+
+Clone https://sourceware.org/git/binutils-gdb.git
+
+Make changes. Commit. Run git format-patch -1. 

@@ -282,6 +282,8 @@ buildGDB()
 
                 if  [[ $OS == "macos" ]]; then
                     brew uninstall --ignore-dependencies zstd
+                    brew uninstall --ignore-dependencies gettext
+                    brew uninstall --ignore-dependencies xz
                 fi
                 
 		log "GDB..."

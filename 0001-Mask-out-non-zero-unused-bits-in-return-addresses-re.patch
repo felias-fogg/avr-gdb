@@ -1,15 +1,15 @@
-From 34d2bb917cc60e3b2e4fe5777429cf5ea164b24e Mon Sep 17 00:00:00 2001
+From 71ea86ee317b9108ebcd3e67d9b432861bc1e269 Mon Sep 17 00:00:00 2001
 From: Bernhard Nebel <nebel@hinterm-ziel.de>
-Date: Fri, 6 Feb 2026 15:55:42 +0100
-Subject: [PATCH] Mask out non-zero bits in flas addresses retrieved from the
- stack
+Date: Sun, 19 Apr 2026 16:50:09 +0200
+Subject: [PATCH] Mask out non-zero unused bits in return addresses retrieved
+ from the stack
 
 ---
- gdb/avr-tdep.c | 25 +++++++++++++++++++++++--
- 1 file changed, 23 insertions(+), 2 deletions(-)
+ gdb/avr-tdep.c | 29 ++++++++++++++++++++++++++++-
+ 1 file changed, 28 insertions(+), 1 deletion(-)
 
 diff --git a/gdb/avr-tdep.c b/gdb/avr-tdep.c
-index fe0283f1b48..d6466baa9e2 100644
+index fe0283f1b48..ab32d17986f 100644
 --- a/gdb/avr-tdep.c
 +++ b/gdb/avr-tdep.c
 @@ -38,6 +38,7 @@
@@ -20,23 +20,17 @@ index fe0283f1b48..d6466baa9e2 100644
  
  /* AVR Background:
  
-@@ -240,7 +241,8 @@ avr_register_type (struct gdbarch *gdbarch, int reg_nr)
-   return builtin_type (gdbarch)->builtin_uint8;
- }
- 
--/* Instruction address checks and conversions.  */
-+
-+/* Instruction address checks and conversions.	*/
- 
- static CORE_ADDR
- avr_make_iaddr (CORE_ADDR x)
-@@ -1057,6 +1059,25 @@ avr_frame_unwind_cache (const frame_info_ptr &this_frame,
+@@ -1057,6 +1058,32 @@ avr_frame_unwind_cache (const frame_info_ptr &this_frame,
    return info;
  }
  
++
 +/* Mask out unused bits in flash memory addresses in order to allow for correct
 +   backtraces. This needs to be done for ATmega16 and ATmega64. For these chips, 
 +   this is documented in the data sheets, but apparently happens also for other chips.
++   In order to allow also flash memory sizes that are not powers of two,
++   the smallest power of two not smaller than the memory size is sought and
++   the mask is produced from it.
 +   The code below works only when the memory map is supplied by the remote server.
 +   In other words, for older servers or GDB compiled without expat, the problem
 +   is unsolved, and backtraces will fail. */
@@ -47,16 +41,19 @@ index fe0283f1b48..d6466baa9e2 100644
 +  static CORE_ADDR pcmask = 0;
 +  if (pcmask == 0) {
 +    struct mem_region *m = lookup_mem_region(0); /* determine flash space */
-+    pcmask = m->hi-1;
++    pcmask = 1;
++    while (pcmask < m->hi) { /* find power of two that is larger or equal to memory size */
++      pcmask = pcmask << 1;
++    }
++    pcmask = psmask - 1;
 +  }
 +  return pcmask;
 +}
 +
-+
  static CORE_ADDR
  avr_unwind_pc (struct gdbarch *gdbarch, const frame_info_ptr &next_frame)
  {
-@@ -1064,7 +1085,7 @@ avr_unwind_pc (struct gdbarch *gdbarch, const frame_info_ptr &next_frame)
+@@ -1064,7 +1091,7 @@ avr_unwind_pc (struct gdbarch *gdbarch, const frame_info_ptr &next_frame)
  
    pc = frame_unwind_register_unsigned (next_frame, AVR_PC_REGNUM);
  
