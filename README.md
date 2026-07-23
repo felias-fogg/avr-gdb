@@ -11,3 +11,7 @@ The result of the latest CI run can be found as assets of the [latest release](h
 Clone https://sourceware.org/git/binutils-gdb.git
 
 Make changes. Commit. Run git format-patch -1. 
+
+## Acknowledgement
+
+The shell script `avr-gdb-build.sh` is based on [Zak's `avr-gcc-build.sh`](https://github.com/ZakKemble/avr-gcc-build).
