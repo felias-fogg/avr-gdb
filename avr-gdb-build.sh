@@ -83,6 +83,10 @@ trap 'failure ${LINENO} "$BASH_COMMAND"' ERR
 
 JOBCOUNT=${JOBCOUNT:-$(getconf _NPROCESSORS_ONLN)}
 
+if [[ "$(uname -m)" == "armv7l" ]]; then
+    JOBCOUNT=1
+fi
+
 NAME_GDB="gdb-${VER_GDB:-17.1}"
 NAME_GMP="gmp-6.3.0" # GDB 11+ needs libgmp
 NAME_MPFR="mpfr-4.2.2" # GDB 14+ needs libmpfr
