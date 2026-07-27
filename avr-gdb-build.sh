@@ -1,5 +1,10 @@
 #!/bin/bash
 
+NAME_GDB="gdb-${VER_GDB:-17.2}"
+NAME_GMP="gmp-6.3.0" # GDB 11+ needs libgmp
+NAME_MPFR="mpfr-4.2.2" # GDB 14+ needs libmpfr
+NAME_EXPAT=("R_2_7_1" "expat-2.7.1") # GDB XML support
+
 usage()
 {
     echo "usage: ./avr-gdb-build <os> <arch>"
@@ -87,14 +92,10 @@ if [[ "$(uname -m)" == "armv7l" ]]; then
     JOBCOUNT=1
 fi
 
-NAME_GDB="gdb-${VER_GDB:-17.1}"
-NAME_GMP="gmp-6.3.0" # GDB 11+ needs libgmp
-NAME_MPFR="mpfr-4.2.2" # GDB 14+ needs libmpfr
-NAME_EXPAT=("R_2_7_1" "expat-2.7.1") # GDB XML support
-
 # Output locations for built toolchains
 BASE=${BASE:-${CWD}/build/}
 PREFIX=${BASE}avr-$OS-$ARCH
+
 
 # Uncomment the next 2 export lines to get a fully static build (under Linux)
 if [[ $OS == "linux" ]]; then
@@ -288,9 +289,9 @@ buildGDB()
 		cd ../../
 
                 if  [[ $OS == "macos" ]]; then
-                    brew uninstall --ignore-dependencies zstd
-                    brew uninstall --ignore-dependencies gettext
-                    brew uninstall --ignore-dependencies xz
+                    brew uninstall --ignore-dependencies zstd || echo "OK"
+                    brew uninstall --ignore-dependencies gettext || echo "OK"
+                    brew uninstall --ignore-dependencies xz || echo "OK"
                 fi
                 
 		log "GDB..."

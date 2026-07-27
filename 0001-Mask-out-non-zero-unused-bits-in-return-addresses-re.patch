@@ -20,7 +20,7 @@ index fe0283f1b48..ab32d17986f 100644
  
  /* AVR Background:
  
-@@ -1057,6 +1058,32 @@ avr_frame_unwind_cache (const frame_info_ptr &this_frame,
+@@ -1057,6 +1058,34 @@ avr_frame_unwind_cache (const frame_info_ptr &this_frame,
    return info;
  }
  
@@ -46,6 +46,8 @@ index fe0283f1b48..ab32d17986f 100644
 +      pcmask = pcmask << 1;
 +    }
 +    pcmask = pcmask - 1;
++    if (pcmask == 0)         /* no memory map give */
++      pcmask = CORE_ADDR_MAX;
 +  }
 +  return pcmask;
 +}
