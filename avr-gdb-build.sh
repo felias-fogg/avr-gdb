@@ -169,7 +169,7 @@ installPackages()
 	elif [[ $OS != "macos" ]]; then
 		log "Running as root user. Installing required packages via apt..."
 		apt update
-		apt install "${required[@]}"
+		apt install -y "${required[@]}"
         elif hash brew 2>/dev/null; then
 	    for package in "${required[@]}"
 	    do
