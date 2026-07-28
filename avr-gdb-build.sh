@@ -145,7 +145,7 @@ installPackages()
         elif [[ $OS == "linux64"  || ( $OS == "linux32" && $ARCH == "arm" ) ]]; then
             local required=("wget" "make" "bzip2" "xz-utils" "autoconf" "texinfo" "libgmp-dev" "libmpfr-dev" "libexpat1-dev")
         elif [[ $OS == "linux32" &&  $ARCH == "intel" ]]; then
-            local required=("libstdc++6:i386" "libgcc1:i386" "zlib1g:i386" "libncurses5:i386" "gcc-11:i386" "binutils:i386" "cpp-11:i386" "libelf-dev:i386" "freeglut3-dev:i386" "gcc-avr" "avr-libc"  "wget" "make" "bzip2" "xz-utils" "autoconf" "texinfo" "libgmp-dev:i386" "libmpfr-dev:i386" "libexpat1-dev:i386" )
+            local required=("libstdc++6:i386" "libgcc1:i386" "zlib1g:i386" "libncurses5:i386" "gcc-11:i386" "g++-11:i386" "binutils:i386" "cpp-11:i386" "libelf-dev:i386" "freeglut3-dev:i386" "gcc-avr" "avr-libc"  "wget" "make" "bzip2" "xz-utils" "autoconf" "texinfo" "libgmp-dev:i386" "libmpfr-dev:i386" "libexpat1-dev:i386" )
         else
             local required=( "texinfo" )
         fi
