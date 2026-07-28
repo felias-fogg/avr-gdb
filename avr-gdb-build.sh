@@ -142,10 +142,10 @@ installPackages()
         fi
         if [[ ${OS:0:7} == "windows" ]]; then
             local required=("wget" "make" "mingw-w64" "bzip2" "xz-utils" "autoconf" "texinfo" "libgmp-dev" "libmpfr-dev" "libexpat1-dev")
-        elif [[ $OS == "linux64" ]] || [[ $OS == "linux32" && $ARCH == "arm" ]]; then
+        elif [[ $OS == "linux64"  || ( $OS == "linux32" && $ARCH == "arm" ) ]]; then
             local required=("wget" "make" "bzip2" "xz-utils" "autoconf" "texinfo" "libgmp-dev" "libmpfr-dev" "libexpat1-dev")
-        elif [[ $OS == "linux32"]] && [[ $ARCH == "intel" ]]; then
-            local required=("ibstdc++6:i386" "libgcc1:i386" "zlib1g:i386" "libncurses5:i386" "gcc-9:i386" "binutils:i386" "cpp-9:i386" "libelf-dev:i386" "freeglut3-dev:i386" "gcc-avr" "avr-libc"  "wget" "make" "bzip2:i386" "xz-utils:i386" "autoconf" "texinfo" "libgmp-dev:i386" "libmpfr-dev:i386" "libexpat1-dev:i386"
+        elif [[ $OS == "linux32" &&  $ARCH == "intel" ]]; then
+            local required=("ibstdc++6:i386" "libgcc1:i386" "zlib1g:i386" "libncurses5:i386" "gcc-9:i386" "binutils:i386" "cpp-9:i386" "libelf-dev:i386" "freeglut3-dev:i386" "gcc-avr" "avr-libc"  "wget" "make" "bzip2:i386" "xz-utils:i386" "autoconf" "texinfo" "libgmp-dev:i386" "libmpfr-dev:i386" "libexpat1-dev:i386" )
         else
             local required=( "texinfo" )
         fi
