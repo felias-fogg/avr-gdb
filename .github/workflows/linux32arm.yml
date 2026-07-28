@@ -1,0 +1,30 @@
+name: Build Linux32-Arm
+on: [workflow_dispatch]
+
+jobs:
+  build-linux32-arm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: felias-fogg/avr-gdb
+          ref: linux32
+      - uses: pguyot/arm-runner-action@v2
+        id: build_image
+        with:
+          cpu: arm1176
+          base_image: raspios_lite:latest
+          copy_artifact_path: linux32arm.tar.gz
+          image_additional_mb: 2048
+          commands: |
+            df -h /
+            sudo apt-get update
+            sudo ./avr-gdb-build.sh linux32 arm
+            sudo cp ./build/avr-linux32-intel/bin/avr-gdb .
+            tar cvz --exclude="*DS_Store" --exclude="*/._*" -f linux32arm.tar.gz avr-gdb
+ 
+      - name: upload
+        uses: actions/upload-artifact@v6
+        with:
+          name: Linux32arm
+          path: linux32arm.tar.gz
