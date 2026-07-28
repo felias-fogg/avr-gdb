@@ -58,14 +58,14 @@ jobs:
       - name: linux-intel
         if: matrix.runner == 'ubuntu-24.04'
         run: |
-          echo "OS=linux" >> $GITHUB_ENV
+          echo "OS=linux64" >> $GITHUB_ENV
           echo "ARCH=intel" >> $GITHUB_ENV
           echo "PREF=x86_64-linux-gnu" >> $GITHUB_ENV
 
       - name: linux-arm
         if: matrix.runner == 'ubuntu-24.04-arm'
         run: |
-          echo "OS=linux" >> $GITHUB_ENV
+          echo "OS=linux64" >> $GITHUB_ENV
           echo "ARCH=arm" >> $GITHUB_ENV
           echo "PREF=aarch64-linux-gnu" >> $GITHUB_ENV
 
