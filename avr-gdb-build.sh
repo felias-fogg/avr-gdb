@@ -8,7 +8,7 @@ NAME_EXPAT=("R_2_7_1" "expat-2.7.1") # GDB XML support
 usage()
 {
     echo "usage: ./avr-gdb-build <os> <arch>"
-    echo "  with <os> one of { windows32, windows64, macos, linux }"
+    echo "  with <os> one of { windows32, windows64, linux32, linux64, macos }"
     echo "  and  <arch> one of { arm, intel }"
     echo "Note: Only Windows is cross-compiled"
 }
@@ -22,7 +22,7 @@ usage()
 # Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
 # http://creativecommons.org/licenses/by-sa/4.0/
 
-if [[ "x$1" != "xwindows32" ]] && [[ "x$1" != "xwindows64" ]] && [[ "x$1" != "xmacos" ]] &&  [[ "x$1" != "xlinux" ]]; then
+if [[ "x$1" != "xwindows32" ]] && [[ "x$1" != "xwindows64" ]] && [[ "x$1" != "xmacos" ]] &&  [[ "x$1" != "xlinux32" ]]  &&  [[ "x$1" != "xlinux64" ]]; then
     usage
     exit 1
 fi
@@ -36,7 +36,7 @@ ARCH=$2
 CWD=$(pwd)
 
 # Only Windows binaries are cross compiled, but for apple we need
-# to specify it nevertheless so that GMP get compiled right
+# to specify it nevertheless so that GMP gets compiled right
 if [[ $OS == "windows32" ]]; then
     HOST="--host=i686-w64-mingw32"
 elif [[ $OS == "windows64" ]]; then
@@ -88,17 +88,13 @@ trap 'failure ${LINENO} "$BASH_COMMAND"' ERR
 
 JOBCOUNT=${JOBCOUNT:-$(getconf _NPROCESSORS_ONLN)}
 
-if [[ "$(uname -m)" == "armv7l" ]]; then
-    JOBCOUNT=1
-fi
-
 # Output locations for built toolchains
 BASE=${BASE:-${CWD}/build/}
 PREFIX=${BASE}avr-$OS-$ARCH
 
 
 # Uncomment the next 2 export lines to get a fully static build (under Linux)
-if [[ $OS == "linux" ]]; then
+if [[ ${OS:0:5} == "linux" ]]; then
     export CFLAGS="-static --static"
     export CXXFLAGS="${CFLAGS}"
 fi
@@ -136,10 +132,20 @@ log()
 
 installPackages()
 {
-        if [[ $OS == "windows32" ]] || [[ $OS == "windows64" ]]; then
+        if [[ $OS == "linux32" ]] && [[ $ARCH == "intel" ]]; then
+            if  [[ $EUID -ne 0 ]]; then
+                echo "ERROR: Need to run as root to switch architecture"
+                exit 2
+            else
+                dpkg --add-architecture i386
+            fi
+        fi
+        if [[ ${OS:0:7} == "windows" ]]; then
             local required=("wget" "make" "mingw-w64" "bzip2" "xz-utils" "autoconf" "texinfo" "libgmp-dev" "libmpfr-dev" "libexpat1-dev")
-        elif [[ $OS == "linux" ]]; then
+        elif [[ $OS == "linux64" ]] || [[ $OS == "linux32" && $ARCH == "arm" ]]; then
             local required=("wget" "make" "bzip2" "xz-utils" "autoconf" "texinfo" "libgmp-dev" "libmpfr-dev" "libexpat1-dev")
+        elif [[ $OS == "linux32"]] && [[ $ARCH == "intel" ]]; then
+            local required=("ibstdc++6:i386" "libgcc1:i386" "zlib1g:i386" "libncurses5:i386" "gcc-9:i386" "binutils:i386" "cpp-9:i386" "libelf-dev:i386" "freeglut3-dev:i386" "gcc-avr" "avr-libc"  "wget" "make" "bzip2:i386" "xz-utils:i386" "autoconf" "texinfo" "libgmp-dev:i386" "libmpfr-dev:i386" "libexpat1-dev:i386"
         else
             local required=( "texinfo" )
         fi
@@ -170,8 +176,17 @@ installPackages()
                 brew list $package || brew install $package
 	    done
         else
-                echo "You need to install Homebrew first"
+            echo "You need to install Homebrew first"
+            exit 2
 	fi
+        if [[ $OS == "linux32" ]] && [[ $ARCH == "intel" ]]; then
+            echo "update-alternatives ..."
+            ls -l /usr/bin/*gcc*
+            update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 10
+            update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 20
+            update-alternatives --install /usr/bin/cc cc /usr/bin/gcc 30
+            update-alternatives --set cc /usr/bin/gcc
+        fi
 }
 
 makeDir()
@@ -206,7 +221,7 @@ downloadSources()
         if [ ! -f $NAME_GDB.tar.xz ]; then 
 	    wget https://ftpmirror.gnu.org/gdb/$NAME_GDB.tar.xz
         fi
-	if [[ $OS != "linux"  ]]; then
+	if [[ ${OS:0:5} != "linux"  ]]; then
 	        log "$NAME_GMP"
                 if [ ! -f $NAME_GMP.tar.xz ]; then 
 		    wget https://ftpmirror.gnu.org/gmp/$NAME_GMP.tar.xz
@@ -253,7 +268,7 @@ buildGDB()
 {
 	log "***GDB (and GMP, MPFR, Expat for Windows/macOS)***"
 	mkdir -p $NAME_GDB/obj-avr
-	if [[ $OS == "windows32" ]] || [[ $OS == "windows64" ]] || [[ $OS == "macos" ]]; then
+	if [[ ${OS:0:7} == "windows" ]] || [[ $OS == "macos" ]]; then
             	log "Extracting libs ..."
 		tar xf $NAME_GMP.tar.xz
 		mkdir -p $NAME_GMP/obj
@@ -263,7 +278,7 @@ buildGDB()
 		mkdir -p ${NAME_EXPAT[1]}/obj
 	fi
 
-	if [[ $OS == "linux" ]]; then
+	if [[ ${OS:0:5} == "linux" ]]; then
 		log "Making for Linux..."
 		cd $NAME_GDB/obj-avr
 		confMake "$PREFIX" "$OPTS_GDB"
