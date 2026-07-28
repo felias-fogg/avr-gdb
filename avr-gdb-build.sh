@@ -186,6 +186,11 @@ installPackages()
             update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 20
             update-alternatives --install /usr/bin/cc cc /usr/bin/gcc 30
             update-alternatives --set cc /usr/bin/gcc
+            ls -l /usr/bin/*g++*
+            update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 10
+            update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 20
+            update-alternatives --install /usr/bin/cxx cxx /usr/bin/g++ 30
+            update-alternatives --set cxx /usr/bin/g++
         fi
 }
 
