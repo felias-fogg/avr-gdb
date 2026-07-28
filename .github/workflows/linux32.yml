@@ -13,11 +13,12 @@ jobs:
       - name: build
         run: |
           sudo ./avr-gdb-build.sh linux32 intel
-          mv build/avr-linux32-intel/bin/avr-gdb .
+          sudo cp ./build/avr-linux32-intel/bin/avr-gdb .
+          tar cvz --exclude="*DS_Store" --exclude="*/._*" -f x86-linux.tar.gz avr-gdb
  
       - name: upload
         uses: actions/upload-artifact@v6
         with:
           name: Linux32-bit
-          path: avr-gdb
+          path: x86-linux.tar.gz
       
