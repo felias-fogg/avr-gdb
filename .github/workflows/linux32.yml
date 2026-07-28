@@ -1,0 +1,23 @@
+name: Build Linux32-Intel
+on: [workflow_dispatch]
+
+jobs:
+  build-linux32:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: felias-fogg/avr-gdb
+          ref: linux32
+
+      - name: build
+        run: |
+          sudo ./avr-gdb-build.sh linux32 intel
+          mv build/avr-linux32-intel/bin/avr-gdb .
+ 
+      - name: upload
+        uses: actions/upload-artifact@v6
+        with:
+          name: Linux32-bit
+          path: avr-gdb
+      
