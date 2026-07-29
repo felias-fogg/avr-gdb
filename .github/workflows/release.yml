@@ -110,7 +110,7 @@ jobs:
           overwrite: true
           if-no-files-found: error
 
-  build-686-linux-gnu:
+  build-i686-linux-gnu:
     needs: check
     runs-on: ubuntu-22.04
     steps:
