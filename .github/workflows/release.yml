@@ -8,7 +8,7 @@ on:
 
 jobs:
   check:
-    runs-on: "ubuntu-latest"
+    runs-on: "ubuntu-24.04"
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v5
@@ -26,73 +26,25 @@ jobs:
           fi
           echo "Release and system version are identical, now we continue"
 
-  build:
+  build-x86_64-apple-darwin:
     needs: check
-    strategy:
-      matrix:
-        runner: [ "macos-15-intel", "macos-15", "ubuntu-24.04", "ubuntu-24.04-arm", "ubuntu-latest", "ubuntu-22.04" ]
-    runs-on: ${{ matrix.runner }}
+    runs-on: macos-15-intel
     steps:
-      - name: Checkout repo
+      - name: checkout repo
         uses: actions/checkout@v5
 
-      - name: Install packages
-        if: matrix.runner == 'ubuntu-24.04' || matrix.runner == 'ubuntu-24.04-arm' || matrix.runner == 'ubuntu-latest'  || matrix.runner == 'ubuntu-22.04'
-        run: |
-          sudo apt-get install wget make mingw-w64 bzip2 xz-utils autoconf texinfo libgmp-dev libmpfr-dev libexpat1-dev
-
-      - name: macos-intel
-        if: matrix.runner == 'macos-15-intel'
+      - name: setup
         run: |
           echo "OS=macos" >> $GITHUB_ENV
           echo "ARCH=intel" >> $GITHUB_ENV
           echo "PREF=x86_64-apple-darwin" >> $GITHUB_ENV
 
-      - name: macos-arm
-        if: matrix.runner == 'macos-15'
-        run: |
-          echo "OS=macos" >> $GITHUB_ENV
-          echo "ARCH=arm" >> $GITHUB_ENV
-          echo "PREF=arm64-apple-darwin" >> $GITHUB_ENV
-
-      - name: linux-intel
-        if: matrix.runner == 'ubuntu-24.04'
-        run: |
-          echo "OS=linux64" >> $GITHUB_ENV
-          echo "ARCH=intel" >> $GITHUB_ENV
-          echo "PREF=x86_64-linux-gnu" >> $GITHUB_ENV
-
-      - name: linux-arm
-        if: matrix.runner == 'ubuntu-24.04-arm'
-        run: |
-          echo "OS=linux64" >> $GITHUB_ENV
-          echo "ARCH=arm" >> $GITHUB_ENV
-          echo "PREF=aarch64-linux-gnu" >> $GITHUB_ENV
-
-      - name: windows32
-        if: matrix.runner == 'ubuntu-latest'
-        run: |
-          echo "OS=windows32" >> $GITHUB_ENV
-          echo "ARCH=intel" >> $GITHUB_ENV
-          echo "PREF=i686-mingw32" >> $GITHUB_ENV
-
-      - name: windows64
-        if: matrix.runner == 'ubuntu-22.04'
-        run: |
-          echo "OS=windows64" >> $GITHUB_ENV
-          echo "ARCH=intel" >> $GITHUB_ENV
-          echo "PREF=x86_64-mingw32" >> $GITHUB_ENV
-
       - name: patch and build 
         run: |
           ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
-          if [[ "${{ env.OS }}" == "windows32" ]] ||  [[ "${{ env.OS }}" == "windows64" ]]; then
-            mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb.exe .
-            tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb.exe
-          else
-            mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
-            tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb
-          fi
+          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
+          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
+          tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb package.json
 
       - name: upload
         uses: actions/upload-artifact@v4
@@ -102,8 +54,222 @@ jobs:
           overwrite: true
           if-no-files-found: error
 
-  upload:
-    needs: build
+  build-arm64-apple-darwin:
+    needs: check
+    runs-on: macos-15
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v5
+
+      - name: setup
+        run: |
+          echo "OS=macos" >> $GITHUB_ENV
+          echo "ARCH=arm" >> $GITHUB_ENV
+          echo "PREF=arm64-apple-darwin" >> $GITHUB_ENV
+
+     - name: patch and build 
+        run: |
+          ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
+          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
+          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
+          tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb package.json
+
+      - name: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PREF }}
+          path: ${{ env.PREF }}.tar.gz
+          overwrite: true
+          if-no-files-found: error
+
+  build-x86_64-linux-gnu:
+    needs: check
+    runs-on: ubuntu-24.04
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v5
+
+      - name: setup
+        run: |
+          echo "OS=linux64" >> $GITHUB_ENV
+          echo "ARCH=intel" >> $GITHUB_ENV
+          echo "PREF=x86_64-linux-gnu" >> $GITHUB_ENV
+
+      - name: patch and build 
+        run: |
+          ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
+          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
+          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
+          tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb package.json
+
+      - name: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PREF }}
+          path: ${{ env.PREF }}.tar.gz
+          overwrite: true
+          if-no-files-found: error
+
+  build-686-linux-gnu:
+    needs: check
+    runs-on: ubuntu-22.04
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v5
+
+      - name: setup
+        run: |
+          echo "OS=linux32" >> $GITHUB_ENV
+          echo "ARCH=intel" >> $GITHUB_ENV
+          echo "PREF=i686-linux-gnu" >> $GITHUB_ENV
+
+      - name: patch and build 
+        run: |
+          ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
+          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
+          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
+          tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb package.json
+
+      - name: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PREF }}
+          path: ${{ env.PREF }}.tar.gz
+          overwrite: true
+          if-no-files-found: error
+
+  build-aarch64-linux-gnu:
+    needs: check
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v5
+
+      - name: setup
+        run: |
+          echo "OS=linux64" >> $GITHUB_ENV
+          echo "ARCH=arm" >> $GITHUB_ENV
+          echo "PREF=aarch64-linux-gnu" >> $GITHUB_ENV
+
+      - name: patch and build 
+        run: |
+          ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
+          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
+          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
+          tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb package.json
+
+      - name: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PREF }}
+          path: ${{ env.PREF }}.tar.gz
+          overwrite: true
+          if-no-files-found: error
+
+  build-arm-linux-gnueabihf:
+    needs: check
+    runs-on: ubuntu-24.02
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v5
+
+      - name: setup
+        run: |
+          echo "OS=linux32" >> $GITHUB_ENV
+          echo "ARCH=arm" >> $GITHUB_ENV
+          echo "PREF=arm-linux-gnueabihf" >> $GITHUB_ENV
+
+      - name: qemu run
+        uses: pguyot/arm-runner-action@v2
+        id: build_image
+        with:
+          cpu: arm1176
+          import_github_env: true
+          base_image: raspios_lite:latest
+          copy_artifact_path: arm-linux-gnueabihf.tar.gz
+          image_additional_mb: 2048
+          commands: |
+            df -h /
+            sudo apt-get update
+            sudo ./avr-gdb-build.sh ${OS} ${ARCH}
+            sudo cp ./build/avr-${OS}-{ARCH}/bin/avr-gdb .
+            sudo cp ./build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
+            tar cvz --exclude="*DS_Store" --exclude="*/._*" -f ${PREF}.tar.gz avr-gdb package.json
+      - name: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PREF }}
+          path: ${{ env.PREF }}.tar.gz
+          overwrite: true
+          if-no-files-found: error
+
+  build-x86_64-mingw32:
+    needs: check
+    runs-on: ubuntu-24.04
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v5
+
+      - name: setup
+        if: matrix.runner == 'ubuntu-22.04'
+        run: |
+          echo "OS=windows64" >> $GITHUB_ENV
+          echo "ARCH=intel" >> $GITHUB_ENV
+          echo "PREF=x86_64-mingw32" >> $GITHUB_ENV
+
+      - name: patch and build 
+        run: |
+          ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
+          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb.exe .
+          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
+          tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb.exe package.json
+
+      - name: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PREF }}
+          path: ${{ env.PREF }}.tar.gz
+          overwrite: true
+          if-no-files-found: error
+
+  build:
+    needs: check
+    runs-on: ubuntu-24.04
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v5
+
+      - name: setup
+        run: |
+          echo "OS=windows32" >> $GITHUB_ENV
+          echo "ARCH=intel" >> $GITHUB_ENV
+          echo "PREF=i686-mingw32" >> $GITHUB_ENV
+
+      - name: patch and build 
+        run: |
+          ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
+          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb.exe .
+          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
+          tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb.exe package.json
+
+      - name: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PREF }}
+          path: ${{ env.PREF }}.tar.gz
+          overwrite: true
+          if-no-files-found: error
+
+  make-release:
+    needs:
+      build-x86_64-apple-darwin
+      build-arm64-apple-darwin
+      build-x86_64-linux-gnu
+      build-i686-linux-gnu
+      build-aarch64-linux-gnu
+      build-arm-linux-gnueabihf
+      build-x86_64-mingw32
+      build-i686-mingw32
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo

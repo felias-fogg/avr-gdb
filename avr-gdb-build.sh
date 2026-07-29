@@ -93,7 +93,7 @@ BASE=${BASE:-${CWD}/build/}
 PREFIX=${BASE}avr-$OS-$ARCH
 
 
-# Uncomment the next 2 export lines to get a fully static build (under Linux)
+# With the next 2 export lines we get a fully static build (under Linux)
 if [[ ${OS:0:5} == "linux" ]]; then
     export CFLAGS="-static --static"
     export CXXFLAGS="${CFLAGS}"
@@ -218,6 +218,52 @@ cleanup()
 	rm -rf ${NAME_EXPAT[1]}
 }
 
+genManifest()
+{
+         if [[ $OS == "linux64" && $ARCH == "arm" ]]; then
+             SYSTEM="linux_aarch64"
+         elif [[ $OS == "linux32" && $ARCH == "arm" ]]; then
+             SYSTEM="linux_armv6l"
+         elif [[ $OS == "macos" &&  $ARCH == "arm" ]]; then
+             SYSTEM="darwin_arm64"
+         elif [[ $OS == "linux32" && $ARCH == "intel" ]]; then
+             SYSTEM="linux_i686"
+         elif [[ $OS == "windows32" && $ARCH == "intel" ]]; then
+             SYSTEM="windows_x86"
+         elif [[ $OS == "macos" && $ARCH == "intel" ]]; then
+             SYSTEM="darwin_x86_64"
+         elif [[ $OS == "linux64" && $ARCH == "intel" ]]; then
+             SYSTEM="linux_x86_64"
+         elif [[ $OS == "windows64" && $ARCH == "intel" ]]; then
+             SYSTEM="windows_amd64"
+         else
+             echo "Unknown platform"
+             exit 2
+         fi
+         cat <<EOF >${PREFIX}/package.json
+{
+  "name": "tool-avr-gdb",
+  "version": "$(head -n 1 VERSION)",
+  "description": "GNU Project Debugger cross-compiled for the Microchip AVR microcontroller architecture",
+  "keywords": [
+    "tools",
+    "debugger",
+    "microchip",
+    "avr"
+  ],
+  "license": "GPL-3.0-or-later",
+  "system": [
+    "${SYSTEM}"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://sourceware.org/git/binutils-gdb"
+  }
+}
+EOF
+
+}
+
 downloadSources()
 {
         
@@ -336,6 +382,7 @@ cleanup
 downloadSources
 patchGDB
 buildGDB
+genManifest
 
 exit 0
 
