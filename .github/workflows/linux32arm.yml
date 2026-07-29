@@ -20,7 +20,7 @@ jobs:
             df -h /
             sudo apt-get update
             sudo ./avr-gdb-build.sh linux32 arm
-            sudo cp ./build/avr-linux32-intel/bin/avr-gdb .
+            sudo cp ./build/avr-linux32-arm/bin/avr-gdb .
             tar cvz --exclude="*DS_Store" --exclude="*/._*" -f linux32arm.tar.gz avr-gdb
  
       - name: upload
