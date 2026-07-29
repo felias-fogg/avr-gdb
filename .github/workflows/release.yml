@@ -41,9 +41,9 @@ jobs:
 
       - name: patch and build 
         run: |
-          sudo ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
-          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
-          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
+          ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
+          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
+          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
           tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb package.json
 
       - name: upload
@@ -69,9 +69,9 @@ jobs:
 
       - name: patch and build 
         run: |
-          sudo ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
-          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
-          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
+          ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
+          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
+          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
           tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb package.json
 
       - name: upload
@@ -211,7 +211,6 @@ jobs:
         uses: actions/checkout@v5
 
       - name: setup
-        if: matrix.runner == 'ubuntu-22.04'
         run: |
           echo "OS=windows64" >> $GITHUB_ENV
           echo "ARCH=intel" >> $GITHUB_ENV
