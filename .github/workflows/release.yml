@@ -232,7 +232,7 @@ jobs:
           overwrite: true
           if-no-files-found: error
 
-  build:
+  build-i686-mingw32:
     needs: check
     runs-on: ubuntu-24.04
     steps:
