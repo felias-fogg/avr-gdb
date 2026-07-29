@@ -67,8 +67,8 @@ jobs:
           echo "ARCH=arm" >> $GITHUB_ENV
           echo "PREF=arm64-apple-darwin" >> $GITHUB_ENV
 
-     - name: patch and build 
-       run: |
+      - name: patch and build 
+        run: |
           ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
           mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
           mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
