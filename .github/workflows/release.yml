@@ -41,9 +41,9 @@ jobs:
 
       - name: patch and build 
         run: |
-          ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
-          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
-          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
+          sudo ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
+          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
+          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
           tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb package.json
 
       - name: upload
@@ -69,9 +69,9 @@ jobs:
 
       - name: patch and build 
         run: |
-          ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
-          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
-          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
+          sudo ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
+          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
+          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
           tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb package.json
 
       - name: upload
@@ -97,9 +97,9 @@ jobs:
 
       - name: patch and build 
         run: |
-          ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
-          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
-          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
+          sudo ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
+          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
+          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
           tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb package.json
 
       - name: upload
@@ -125,9 +125,9 @@ jobs:
 
       - name: patch and build 
         run: |
-          ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
-          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
-          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
+          sudo ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
+          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
+          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
           tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb package.json
 
       - name: upload
@@ -153,9 +153,9 @@ jobs:
 
       - name: patch and build 
         run: |
-          ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
-          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
-          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
+          sudo ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
+          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
+          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
           tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb package.json
 
       - name: upload
@@ -219,9 +219,9 @@ jobs:
 
       - name: patch and build 
         run: |
-          ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
-          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb.exe .
-          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
+          sudo ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
+          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb.exe .
+          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
           tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb.exe package.json
 
       - name: upload
@@ -247,9 +247,9 @@ jobs:
 
       - name: patch and build 
         run: |
-          ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
-          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb.exe .
-          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
+          sudo ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
+          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb.exe .
+          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
           tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb.exe package.json
 
       - name: upload
