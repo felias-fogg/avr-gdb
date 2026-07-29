@@ -8,7 +8,7 @@ on:
 
 jobs:
   check:
-    runs-on: "ubuntu-24.04"
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v5
@@ -84,7 +84,7 @@ jobs:
 
   build-x86_64-linux-gnu:
     needs: check
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - name: checkout repo
         uses: actions/checkout@v5
@@ -112,7 +112,7 @@ jobs:
 
   build-i686-linux-gnu:
     needs: check
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: checkout repo
         uses: actions/checkout@v5
@@ -140,7 +140,7 @@ jobs:
 
   build-aarch64-linux-gnu:
     needs: check
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-latest-arm
     steps:
       - name: checkout repo
         uses: actions/checkout@v5
@@ -168,7 +168,7 @@ jobs:
 
   build-arm-linux-gnueabihf:
     needs: check
-    runs-on: ubuntu-24.02
+    runs-on: ubuntu-latest
     steps:
       - name: checkout repo
         uses: actions/checkout@v5
@@ -205,7 +205,7 @@ jobs:
 
   build-x86_64-mingw32:
     needs: check
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - name: checkout repo
         uses: actions/checkout@v5
@@ -233,7 +233,7 @@ jobs:
 
   build-i686-mingw32:
     needs: check
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - name: checkout repo
         uses: actions/checkout@v5
