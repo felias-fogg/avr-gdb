@@ -185,7 +185,7 @@ jobs:
         with:
           cpu: arm1176
           import_github_env: true
-          base_image: raspi_1_bookworm:20231109
+          base_image: dietpi:rpi_armv6_bookworm
           copy_artifact_path: arm-linux-gnueabihf.tar.gz
           image_additional_mb: 2048
           commands: |
