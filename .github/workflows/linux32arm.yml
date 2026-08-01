@@ -13,7 +13,7 @@ jobs:
         id: build_image
         with:
           cpu: arm1176
-          base_image: raspi2_bookworm:20231109
+          base_image: raspios_lite:latest
           copy_artifact_path: linux32arm.tar.gz
           image_additional_mb: 2048
           commands: |
