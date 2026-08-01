@@ -19,6 +19,7 @@ jobs:
           commands: |
             df -h /
             uname -a
+            ldd --version
             sudo apt-get update
             sudo ./avr-gdb-build.sh linux32 arm
             sudo cp ./build/avr-linux32-arm/bin/avr-gdb .

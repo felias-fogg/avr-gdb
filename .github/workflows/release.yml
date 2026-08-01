@@ -185,17 +185,19 @@ jobs:
         with:
           cpu: arm1176
           import_github_env: true
-          base_image: dietpi:rpi_armv6_bookworm
+          base_image: raspios_lite:latest
           copy_artifact_path: arm-linux-gnueabihf.tar.gz
           image_additional_mb: 2048
           commands: |
+            uname -a
             df -h /
-            apt-get update -y
-            apt install -y patch
-            ./avr-gdb-build.sh ${OS} ${ARCH}
-            cp ./build/avr-${OS}-${ARCH}/bin/avr-gdb .
-            cp ./build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
+            sudo apt-get update -y
+            sudo apt install -y patch
+            sudo ./avr-gdb-build.sh ${OS} ${ARCH}
+            sudo cp ./build/avr-${OS}-${ARCH}/bin/avr-gdb .
+            sudo cp ./build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
             tar cvz --exclude="*DS_Store" --exclude="*/._*" -f ${PREF}.tar.gz avr-gdb package.json
+
       - name: upload
         uses: actions/upload-artifact@v4
         with:
