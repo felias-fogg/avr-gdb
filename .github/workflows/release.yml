@@ -190,6 +190,7 @@ jobs:
           image_additional_mb: 2048
           commands: |
             uname -a
+            ldd --version
             df -h /
             sudo apt-get update -y
             sudo apt install -y patch
