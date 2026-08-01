@@ -168,7 +168,7 @@ jobs:
 
   build-arm-linux-gnueabihf:
     needs: check
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: checkout repo
         uses: actions/checkout@v5
@@ -178,7 +178,6 @@ jobs:
           echo "OS=linux32" >> $GITHUB_ENV
           echo "ARCH=arm" >> $GITHUB_ENV
           echo "PREF=arm-linux-gnueabihf" >> $GITHUB_ENV
-
       - name: qemu run
         uses: pguyot/arm-runner-action@v2
         id: build_image
@@ -187,18 +186,14 @@ jobs:
           import_github_env: true
           base_image: raspios_lite:latest
           copy_artifact_path: arm-linux-gnueabihf.tar.gz
-          image_additional_mb: 8192
+          image_additional_mb: 2048
           commands: |
-            uname -a
-            ldd --version
             df -h /
-            sudo apt-get update -y
-            sudo apt install -y patch
+            sudo apt-get update
             sudo ./avr-gdb-build.sh ${OS} ${ARCH}
             sudo cp ./build/avr-${OS}-${ARCH}/bin/avr-gdb .
             sudo cp ./build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
             tar cvz --exclude="*DS_Store" --exclude="*/._*" -f ${PREF}.tar.gz avr-gdb package.json
-
       - name: upload
         uses: actions/upload-artifact@v4
         with:
