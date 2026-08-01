@@ -187,7 +187,7 @@ jobs:
           import_github_env: true
           base_image: raspios_lite:latest
           copy_artifact_path: arm-linux-gnueabihf.tar.gz
-          image_additional_mb: 4096
+          image_additional_mb: 8192
           commands: |
             uname -a
             ldd --version
