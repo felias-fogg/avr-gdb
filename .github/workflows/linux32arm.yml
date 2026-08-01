@@ -15,7 +15,7 @@ jobs:
           cpu: arm1176
           base_image: raspios_lite:latest
           copy_artifact_path: linux32arm.tar.gz
-          image_additional_mb: 2048
+          image_additional_mb: 4096
           commands: |
             df -h /
             uname -a
