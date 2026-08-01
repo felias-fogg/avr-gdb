@@ -191,6 +191,7 @@ jobs:
           commands: |
             df -h /
             apt-get update -y
+            apt install -y patch
             ./avr-gdb-build.sh ${OS} ${ARCH}
             cp ./build/avr-${OS}-${ARCH}/bin/avr-gdb .
             cp ./build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
