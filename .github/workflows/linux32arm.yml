@@ -18,6 +18,7 @@ jobs:
           image_additional_mb: 2048
           commands: |
             df -h /
+            uname -a
             sudo apt-get update
             sudo ./avr-gdb-build.sh linux32 arm
             sudo cp ./build/avr-linux32-arm/bin/avr-gdb .
