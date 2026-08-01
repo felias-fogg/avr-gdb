@@ -190,10 +190,10 @@ jobs:
           image_additional_mb: 2048
           commands: |
             df -h /
-            sudo apt-get update
-            sudo ./avr-gdb-build.sh ${OS} ${ARCH}
-            sudo cp ./build/avr-${OS}-${ARCH}/bin/avr-gdb .
-            sudo cp ./build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
+            apt-get update -y
+            ./avr-gdb-build.sh ${OS} ${ARCH}
+            cp ./build/avr-${OS}-${ARCH}/bin/avr-gdb .
+            cp ./build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
             tar cvz --exclude="*DS_Store" --exclude="*/._*" -f ${PREF}.tar.gz avr-gdb package.json
       - name: upload
         uses: actions/upload-artifact@v4
