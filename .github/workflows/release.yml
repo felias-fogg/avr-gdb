@@ -42,9 +42,11 @@ jobs:
       - name: patch and build 
         run: |
           ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
-          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
-          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
-          tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb package.json
+          rm -rf tool
+          mkdir tool
+          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb tool
+          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json tool
+          tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz tool
 
       - name: upload
         uses: actions/upload-artifact@v4
@@ -70,9 +72,11 @@ jobs:
       - name: patch and build 
         run: |
           ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
-          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
-          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
-          tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb package.json
+          rm -rf tool
+          mkdir tool
+          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb tool
+          mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json tool
+          tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz tool
 
       - name: upload
         uses: actions/upload-artifact@v4
@@ -98,9 +102,11 @@ jobs:
       - name: patch and build 
         run: |
           sudo ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
-          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
-          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
-          tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb package.json
+          sudo rm -rf tool
+          sudo mkdir tool
+          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb tool
+          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json tool
+          tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz tool
 
       - name: upload
         uses: actions/upload-artifact@v4
@@ -126,9 +132,11 @@ jobs:
       - name: patch and build 
         run: |
           sudo ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
-          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
-          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
-          tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb package.json
+          sudo rm -rf tool
+          sudo mkdir tool
+          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb tool
+          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json tool
+          tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz tool
 
       - name: upload
         uses: actions/upload-artifact@v4
@@ -154,9 +162,11 @@ jobs:
       - name: patch and build 
         run: |
           sudo ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
-          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb .
-          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
-          tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb package.json
+          sudo rm -rf tool
+          sudo mkdir tool
+          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb tool
+          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json tool
+          tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz tool
 
       - name: upload
         uses: actions/upload-artifact@v4
@@ -191,9 +201,11 @@ jobs:
             df -h /
             sudo apt-get update
             sudo ./avr-gdb-build.sh ${OS} ${ARCH}
-            sudo cp ./build/avr-${OS}-${ARCH}/bin/avr-gdb .
-            sudo cp ./build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
-            tar cvz --exclude="*DS_Store" --exclude="*/._*" -f ${PREF}.tar.gz avr-gdb package.json
+            sudo rm -rf tool
+            sudo mkdir tool
+            sudo cp ./build/avr-${OS}-${ARCH}/bin/avr-gdb tool
+            sudo cp ./build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json tool
+            tar cvz --exclude="*DS_Store" --exclude="*/._*" -f ${PREF}.tar.gz tool
       - name: upload
         uses: actions/upload-artifact@v4
         with:
@@ -218,9 +230,11 @@ jobs:
       - name: patch and build 
         run: |
           sudo ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
-          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb.exe .
-          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
-          tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb.exe package.json
+          sudo rm -rf tool
+          sudo mkdir tool
+          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb.exe tool
+          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json tool
+          tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz tool
 
       - name: upload
         uses: actions/upload-artifact@v4
@@ -246,9 +260,11 @@ jobs:
       - name: patch and build 
         run: |
           sudo ./avr-gdb-build.sh ${{ env.OS }} ${{ env.ARCH }}
-          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb.exe .
-          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json .
-          tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz avr-gdb.exe package.json
+          sudo rm -rf tool
+          sudo mkdir tool
+          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb.exe tool
+          sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json tool
+          tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz tool
 
       - name: upload
         uses: actions/upload-artifact@v4
