@@ -1,0 +1,8 @@
+17.2.2
+  - The Ubuntu (22.04) version crashed on Ubuntu 24.04 (Intel) whenreading the symbols. Therefore all
+  binaries are now based on Ubuntu 24.04.
+
+17.2.1
+  - Using new version and fixing the bug that made dw-link unusable (because it does not use the XML
+  memory map.
+
