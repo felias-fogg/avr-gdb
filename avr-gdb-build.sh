@@ -171,6 +171,12 @@ OPTS_GDB="
 #  - Windows: the cross build installs mingw-w64 and no curses for it. Until
 #    that changes, the Windows clients have no TUI -- as they never had, only
 #    now it is said out loud instead of happening quietly.
+#
+# On Linux the answer is the other way round: libncurses-dev is in the package
+# list now. Asking for the TUI without asking for its library worked only on
+# machines that happened to have it -- a GitHub runner does, a Raspberry Pi OS
+# lite image does not. Pinning an option is half of the job; the other half is
+# requiring what it needs.
 #  - LINK_STATIC=1: a static link needs a static curses, which the build machine
 #    may not have. That comparison is about glibc, not about the TUI.
 if [[ ${OS:0:7} == "windows" ]] || [[ "${LINK_STATIC:-0}" == "1" ]]; then
@@ -206,9 +212,9 @@ installPackages()
         if [[ ${OS:0:7} == "windows" ]]; then
             local required=("build-essential" "m4" "ca-certificates" "wget" "make" "mingw-w64" "bzip2" "xz-utils" "autoconf" "texinfo" "libgmp-dev" "libmpfr-dev" "libexpat1-dev")
         elif [[ $OS == "linux64"  || ( $OS == "linux32" && $ARCH == "arm" ) ]]; then
-            local required=("build-essential" "m4" "ca-certificates" "wget" "make" "bzip2" "xz-utils" "autoconf" "texinfo" "libgmp-dev" "libmpfr-dev" "libexpat1-dev")
+            local required=("build-essential" "m4" "ca-certificates" "wget" "make" "bzip2" "xz-utils" "autoconf" "texinfo" "libgmp-dev" "libmpfr-dev" "libexpat1-dev" "libncurses-dev")
         elif [[ $OS == "linux32" &&  $ARCH == "intel" ]]; then
-            local required=("libstdc++6:i386" "libgcc1:i386" "zlib1g:i386" "libncurses5:i386" "gcc-11:i386" "g++-11:i386" "binutils:i386" "cpp-11:i386" "libelf-dev:i386" "freeglut3-dev:i386" "gcc-avr" "avr-libc"  "wget" "make" "bzip2" "xz-utils" "autoconf" "texinfo" "libgmp-dev:i386" "libmpfr-dev:i386" "libexpat1-dev:i386" )
+            local required=("libstdc++6:i386" "libgcc1:i386" "zlib1g:i386" "libncurses5:i386" "gcc-11:i386" "g++-11:i386" "binutils:i386" "cpp-11:i386" "libelf-dev:i386" "freeglut3-dev:i386" "gcc-avr" "avr-libc"  "wget" "make" "bzip2" "xz-utils" "autoconf" "texinfo" "libgmp-dev:i386" "libmpfr-dev:i386" "libexpat1-dev:i386" "libncurses-dev:i386" )
         else
             local required=( "texinfo" )
         fi
