@@ -1,0 +1,86 @@
+# For finding a base image for the arm32 client that actually works, without a
+# commit per attempt: the image is an input. It also reports what it got --
+# which Debian the image is built on and which glibc it carries -- so a wrong
+# guess is visible at once instead of halfway through a build.
+#
+# Why this matters now: until recently the arm client was linked statically, so
+# the image's glibc did not reach the user. It is linked dynamically now, which
+# makes that glibc the promise we ship. 'latest' must not decide it -- the
+# action's own documentation says the latest image can change with new releases.
+#
+# No runtime test here. Running an armv6 client would need qemu-user in the
+# outer job, and the glibc floor can be measured without executing anything:
+# readelf parses ELF directly and does not care which architecture it reads.
+name: Try an arm32 base image
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_image:
+        description: >
+          Base image for arm-runner-action. Examples: raspi_1_bookworm,
+          raspi_1_bullseye, raspios_lite:2023-05-03. Avoid anything :latest.
+        type: string
+        default: raspi_1_bookworm
+      max_glibc_minor:
+        description: >
+          Highest glibc 2.x the finished client may require. Bookworm is 36,
+          bullseye is 31. Raise it for an attempt, not as a habit.
+        type: string
+        default: "36"
+
+jobs:
+  build:
+    name: build on ${{ inputs.base_image }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v5
+
+      - name: build inside the image
+        uses: pguyot/arm-runner-action@v2
+        with:
+          # armv6, so the result runs on every Pi including the first.
+          cpu: arm1176
+          base_image: ${{ inputs.base_image }}
+          image_additional_mb: 4096
+          copy_artifact_path: arm-linux-gnueabihf.tar.gz
+          commands: |
+            set -x
+            # What did we actually get? First thing in the log, so a wrong
+            # image does not cost a whole build to notice.
+            head -3 /etc/os-release
+            ldd --version | head -1
+            df -h /
+            sudo apt-get update
+            sudo ./avr-gdb-build.sh linux32 arm
+            sudo rm -rf tool
+            sudo mkdir tool
+            sudo cp ./build/avr-linux32-arm/bin/avr-gdb tool
+            sudo cp ./build/avr-linux32-arm/package.json tool
+            tar cvz --exclude="*DS_Store" --exclude="*/._*" \
+                -f arm-linux-gnueabihf.tar.gz tool
+
+      - name: what came out
+        run: |
+          tar xzf arm-linux-gnueabihf.tar.gz
+          file tool/avr-gdb
+          echo "--- dynamic dependencies ---"
+          readelf -d tool/avr-gdb | grep NEEDED || echo "(none -- static build)"
+          echo "--- glibc ---"
+          MAX=$(readelf -V tool/avr-gdb | grep -o "GLIBC_2\.[0-9]*" | sort -uV | tail -1)
+          echo "highest glibc requirement: ${MAX:-none}"
+          if [ -z "$MAX" ]; then
+            echo "::error::no GLIBC_ references -- linked statically?"
+            exit 1
+          fi
+          if [ "${MAX#GLIBC_2.}" -gt "${{ inputs.max_glibc_minor }}" ]; then
+            echo "::error::requires $MAX, this run allowed at most GLIBC_2.${{ inputs.max_glibc_minor }}"
+            exit 1
+          fi
+
+      - name: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: arm-linux-gnueabihf-${{ inputs.base_image }}
+          path: arm-linux-gnueabihf.tar.gz
