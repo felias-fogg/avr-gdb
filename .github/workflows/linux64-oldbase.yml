@@ -70,15 +70,23 @@ jobs:
       - name: are the pinned options really in effect
         run: |
           CONF=$(build/avr-linux64-intel/bin/avr-gdb -nx -batch -ex "show configuration")
+          # Printed either way: when this fails, the configuration is what
+          # answers the question, and hunting for it afterwards costs a run.
+          printf '%s\n' "$CONF"
           for want in --without-debuginfod --disable-source-highlight \
-                      --without-curses --without-lzma --without-xxhash \
-                      --without-babeltrace --without-python --without-guile; do
+                      --without-lzma --without-xxhash --without-babeltrace \
+                      --without-python --without-guile --with-curses; do
             if ! printf '%s' "$CONF" | grep -q -- "$want"; then
               echo "::error::configuration does not report $want"
               exit 1
             fi
           done
           echo "all pinned options confirmed by the binary itself"
+
+          # The TUI is kept for the people who want it, so it gets looked at.
+          # In a build without it the command does not exist and gdb exits
+          # non-zero, which is exactly the report we want.
+          build/avr-linux64-intel/bin/avr-gdb -nx -batch -ex "help layout"
 
       - name: package
         run: |

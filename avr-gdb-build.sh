@@ -121,13 +121,19 @@ export CXXFLAGS="${CXXFLAGS} -D_WIN32_WINNT=0x0600"
 # the same binary: the ARM client came out without debuginfod only because that
 # host did not have the library, not because anybody chose it.
 #
-# The list matches what the clients already are: the configuration gdb carries
-# for 'show configuration' says --without-curses, --without-lzma, --without-
-# xxhash, --without-babeltrace, --without-debuginfod and
-# --disable-source-highlight for the Linux ARM client. So this pins the state,
-# it does not change it. Adding the TUI back is a decision of its own -- it
-# needs curses, and then curses needs linking in a way that survives a
-# different machine.
+# Most of the list pins what the clients already are: the configuration gdb
+# carries for 'show configuration' reports --without-lzma, --without-xxhash,
+# --without-babeltrace, --without-debuginfod and --disable-source-highlight.
+#
+# --enable-tui is the one deliberate change, and the reason is that curses
+# cannot be refused. --without-curses looks like a switch but is only a
+# preference: configure treats it exactly like not passing it, and then looks
+# for curses anyway, because Readline needs termcap. So on a machine that has
+# ncurses the library gets linked either way. The ARM client reports
+# --without-curses because that build host had none, not because it was asked
+# for. Given that the dependency is there regardless, refusing the TUI would
+# cost a feature and save nothing; asking for it also makes a missing curses a
+# failed configure rather than a client quietly built without it.
 #
 # --without-libiconv-prefix means gdb uses glibc's iconv. That is what loads
 # gconv/ISO8859-1.so through dlopen, which is fatal in a statically linked
@@ -137,7 +143,7 @@ OPTS_GDB="
 	--target=avr
 	--with-static-standard-libraries
 	--with-expat
-	--without-curses
+	--enable-tui
 	--without-python
 	--without-guile
 	--without-debuginfod
