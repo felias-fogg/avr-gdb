@@ -93,8 +93,24 @@ BASE=${BASE:-${CWD}/build/}
 PREFIX=${BASE}avr-$OS-$ARCH
 
 
-# With the next 2 export lines we get a fully static build (under Linux)
-if [[ ${OS:0:5} == "linux" ]]; then
+# Linux is linked against the glibc of the build system, not statically.
+#
+# A statically linked glibc is not self-contained: NSS (getaddrinfo, getpwuid)
+# and gconv (iconv_open, so every charset conversion) load their modules with
+# dlopen at run time. Those modules pull in the system's libc.so.6, so a second
+# glibc lands in the process, its __libc_early_init runs against thread-local
+# storage laid out by the first, and the client dies in __ctype_init. What it
+# takes to get there: an ELF file loaded, so that there is a target charset at
+# all, then a language set, then any expression evaluated -- the charset is set
+# up lazily, so the first evaluation after the change is what calls iconv_open.
+# It only appears to work while the build machine and the running machine have
+# the same glibc.
+#
+# Reach comes from building on an old base instead: glibc is backwards
+# compatible, so a client built against 2.31 runs on 2.39, never the reverse.
+# LINK_STATIC=1 brings the old behaviour back, for comparing the two.
+if [[ ${OS:0:5} == "linux" ]] && [[ "${LINK_STATIC:-0}" == "1" ]]; then
+    log "LINK_STATIC=1: linking glibc statically -- see the note above"
     export CFLAGS="-static --static"
     export CXXFLAGS="${CFLAGS}"
 fi
@@ -160,9 +176,9 @@ installPackages()
             fi
         fi
         if [[ ${OS:0:7} == "windows" ]]; then
-            local required=("wget" "make" "mingw-w64" "bzip2" "xz-utils" "autoconf" "texinfo" "libgmp-dev" "libmpfr-dev" "libexpat1-dev")
+            local required=("build-essential" "m4" "ca-certificates" "wget" "make" "mingw-w64" "bzip2" "xz-utils" "autoconf" "texinfo" "libgmp-dev" "libmpfr-dev" "libexpat1-dev")
         elif [[ $OS == "linux64"  || ( $OS == "linux32" && $ARCH == "arm" ) ]]; then
-            local required=("wget" "make" "bzip2" "xz-utils" "autoconf" "texinfo" "libgmp-dev" "libmpfr-dev" "libexpat1-dev")
+            local required=("build-essential" "m4" "ca-certificates" "wget" "make" "bzip2" "xz-utils" "autoconf" "texinfo" "libgmp-dev" "libmpfr-dev" "libexpat1-dev")
         elif [[ $OS == "linux32" &&  $ARCH == "intel" ]]; then
             local required=("libstdc++6:i386" "libgcc1:i386" "zlib1g:i386" "libncurses5:i386" "gcc-11:i386" "g++-11:i386" "binutils:i386" "cpp-11:i386" "libelf-dev:i386" "freeglut3-dev:i386" "gcc-avr" "avr-libc"  "wget" "make" "bzip2" "xz-utils" "autoconf" "texinfo" "libgmp-dev:i386" "libmpfr-dev:i386" "libexpat1-dev:i386" )
         else
