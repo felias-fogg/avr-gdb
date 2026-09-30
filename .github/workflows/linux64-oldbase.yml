@@ -1,0 +1,96 @@
+# Builds the 64-bit Intel Linux client on the oldest runner image GitHub still
+# offers, so that it runs on every glibc from that one upwards rather than only
+# on the newest. glibc is backwards compatible: built against 2.35 it runs on
+# 2.39, never the other way round.
+#
+# Separate from the release workflow on purpose, so it can be tried without
+# touching a release.
+#
+# Two things to know about this choice. GitHub retires old runner images --
+# ubuntu-20.04 went in 2025 and this one will follow -- and when it does, the
+# requirement rises without anybody noticing. That is what the glibc check
+# below is for: it fails loudly instead. If a lower floor than the oldest
+# runner is ever wanted, the build has to move into a container, and then the
+# package sources of an end-of-life Debian become the next problem.
+name: Build Linux64 on an old base
+
+on: [workflow_dispatch]
+
+env:
+  # The highest glibc the finished client may require. Raise it only together
+  # with a deliberate decision about which systems are being dropped.
+  MAX_GLIBC_MINOR: 35
+
+jobs:
+  build-x86_64-linux-gnu-oldbase:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v5
+
+      - name: which glibc are we building against
+        run: ldd --version | head -1
+
+      - name: build
+        run: sudo ./avr-gdb-build.sh linux64 intel
+
+      - name: what the binary needs
+        run: |
+          B=build/avr-linux64-intel/bin/avr-gdb
+          file "$B"
+          ldd "$B"
+          MAX=$(objdump -T "$B" | grep -oE "GLIBC_2\.[0-9]+" | sort -uV | tail -1)
+          echo "highest glibc requirement: ${MAX:-none}"
+          if [ -z "$MAX" ]; then
+            echo "::error::no GLIBC_ references at all -- linked statically again?"
+            exit 1
+          fi
+          if [ "${MAX#GLIBC_2.}" -gt "${MAX_GLIBC_MINOR}" ]; then
+            echo "::error::requires $MAX, allowed is at most GLIBC_2.${MAX_GLIBC_MINOR}"
+            exit 1
+          fi
+
+      - name: does it survive the charset path
+        run: |
+          # What killed the statically linked client, and it takes all three
+          # parts: an ELF file, so there is a target charset to set up; a
+          # language set, which discards what was cached; and then an
+          # expression, because the charset is only set up when one is
+          # evaluated. Any of the three alone gets through.
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq gcc-avr avr-libc
+          printf "int main(void){return 0;}\n" > probe.c
+          avr-gcc -mmcu=atmega328p -O1 -g -o probe.elf probe.c
+          build/avr-linux64-intel/bin/avr-gdb -nx -batch probe.elf \
+            -ex "set language c" \
+            -ex "print (char)65" \
+            -ex "set \$ITM_BASE = 0xE0000000" \
+            -ex "print \$ITM_BASE"
+
+      - name: are the pinned options really in effect
+        run: |
+          CONF=$(build/avr-linux64-intel/bin/avr-gdb -nx -batch -ex "show configuration")
+          for want in --without-debuginfod --disable-source-highlight \
+                      --without-curses --without-lzma --without-xxhash \
+                      --without-babeltrace --without-python --without-guile; do
+            if ! printf '%s' "$CONF" | grep -q -- "$want"; then
+              echo "::error::configuration does not report $want"
+              exit 1
+            fi
+          done
+          echo "all pinned options confirmed by the binary itself"
+
+      - name: package
+        run: |
+          sudo rm -rf tool
+          sudo mkdir tool
+          sudo mv build/avr-linux64-intel/bin/avr-gdb tool
+          sudo mv build/avr-linux64-intel/package.json tool
+          tar -cvz --exclude="*DS_Store" --exclude="*/._*" \
+              -f x86_64-linux-gnu-oldbase.tar.gz tool
+
+      - name: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: x86_64-linux-gnu-oldbase
+          path: x86_64-linux-gnu-oldbase.tar.gz
