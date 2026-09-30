@@ -1,0 +1,100 @@
+# For trying a deployment target on macOS without a commit per attempt.
+#
+# Why this matters: the script sets no deployment target, so clang takes the
+# version of the build machine. Built on macos-14 that means the client asks for
+# macOS 14 or newer and simply refuses to start on 12 or 13 -- dyld rejects it
+# before main(). That is the same silent floor as glibc on Linux, under a
+# different name, and unlike glibc it costs nothing to fix: Apple supports
+# targeting an older system from a current SDK.
+#
+# MACOSX_DEPLOYMENT_TARGET is set for the whole job, not just for gdb's
+# configure. gmp, mpfr and expat are compiled by the same script, and a
+# deployment target that covers only some of the parts covers nothing.
+name: Try a macOS deployment target
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: Which runner to build on. macos-14 is Apple Silicon.
+        type: choice
+        options: [macos-14, macos-14-large]
+        default: macos-14
+      arch:
+        description: >
+          Must match the runner: arm for macos-14, intel for macos-14-large.
+          Checked below before anything is built.
+        type: choice
+        options: [arm, intel]
+        default: arm
+      deployment_target:
+        description: >
+          Oldest macOS the client should run on. 11.0 is the floor for Apple
+          Silicon -- there was no earlier one. For Intel, 10.15 is reasonable;
+          gdb needs C++17 and the standard library gets thin before that.
+        type: string
+        default: "11.0"
+
+jobs:
+  build:
+    name: ${{ inputs.arch }} targeting macOS ${{ inputs.deployment_target }}
+    runs-on: ${{ inputs.runner }}
+    env:
+      MACOSX_DEPLOYMENT_TARGET: ${{ inputs.deployment_target }}
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v5
+
+      - name: does the runner match the chosen arch
+        run: |
+          # Two inputs that have to agree, so they are checked rather than
+          # trusted: a mismatch would build for the wrong architecture and the
+          # error would only show up in somebody's hands.
+          HAVE=$(uname -m)
+          echo "runner is $HAVE, asked for ${{ inputs.arch }}"
+          case "${{ inputs.arch }}:$HAVE" in
+            arm:arm64|intel:x86_64) ;;
+            *) echo "::error::${{ inputs.arch }} does not match a $HAVE runner"; exit 1 ;;
+          esac
+          sw_vers
+          echo "MACOSX_DEPLOYMENT_TARGET=$MACOSX_DEPLOYMENT_TARGET"
+
+      - name: build
+        run: ./avr-gdb-build.sh macos ${{ inputs.arch }}
+
+      - name: what came out
+        run: |
+          B=build/avr-macos-${{ inputs.arch }}/bin/avr-gdb
+          file "$B"
+          echo "--- dynamic dependencies ---"
+          otool -L "$B"
+          echo "--- what does it demand of the system ---"
+          otool -l "$B" | grep -A4 LC_BUILD_VERSION || true
+          MINOS=$(vtool -show-build "$B" 2>/dev/null | awk '/minos/ {print $2; exit}')
+          echo "minos: ${MINOS:-unknown}"
+          if [ -z "$MINOS" ]; then
+            echo "::error::could not read a deployment target from the binary"
+            exit 1
+          fi
+          # The point of the exercise: the binary has to ask for what we asked
+          # for, not for the version of the machine that happened to build it.
+          case "$MINOS" in
+            ${{ inputs.deployment_target }}|${{ inputs.deployment_target }}.*) ;;
+            *) echo "::error::asked for ${{ inputs.deployment_target }}, binary says $MINOS"
+               exit 1 ;;
+          esac
+
+      - name: package
+        run: |
+          rm -rf tool
+          mkdir tool
+          mv build/avr-macos-${{ inputs.arch }}/bin/avr-gdb tool
+          mv build/avr-macos-${{ inputs.arch }}/package.json tool
+          tar -cvz --exclude="*DS_Store" --exclude="*/._*" \
+              -f macos-${{ inputs.arch }}-target${{ inputs.deployment_target }}.tar.gz tool
+
+      - name: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ inputs.arch }}-target${{ inputs.deployment_target }}
+          path: macos-${{ inputs.arch }}-target${{ inputs.deployment_target }}.tar.gz
