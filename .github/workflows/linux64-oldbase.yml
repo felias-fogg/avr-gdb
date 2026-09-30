@@ -14,7 +14,16 @@
 # package sources of an end-of-life Debian become the next problem.
 name: Build Linux64 on an old base
 
-on: [workflow_dispatch]
+on:
+  workflow_dispatch:
+    inputs:
+      link_static:
+        description: >
+          Link glibc statically. Not a way to build a client -- a way to check
+          that the tests below actually catch it when somebody does. Expect the
+          run to go red.
+        type: boolean
+        default: false
 
 env:
   # The highest glibc the finished client may require. Raise it only together
@@ -32,9 +41,16 @@ jobs:
         run: ldd --version | head -1
 
       - name: build
-        run: sudo ./avr-gdb-build.sh linux64 intel
+        # sudo drops the environment, so the variable is handed over explicitly.
+        run: |
+          sudo env LINK_STATIC=${{ inputs.link_static && '1' || '0' }} \
+               ./avr-gdb-build.sh linux64 intel
 
       - name: what the binary needs
+        # Advisory during the static experiment only, so that the run carries on
+        # to the charset test. Otherwise this step would catch the static build
+        # first and we would never learn whether the other check works too.
+        continue-on-error: ${{ inputs.link_static }}
         run: |
           B=build/avr-linux64-intel/bin/avr-gdb
           file "$B"
