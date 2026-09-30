@@ -123,6 +123,9 @@ jobs:
             -ex "print \$ITM_BASE"
 
       - name: are the pinned options really in effect
+        # Skipped during the static experiment: that build deliberately has no
+        # TUI, so this check would report a difference it was told to create.
+        if: ${{ !inputs.link_static }}
         run: |
           CONF=$(tool/avr-gdb -nx -batch -ex "show configuration")
           # Printed either way: when this fails, the configuration is what

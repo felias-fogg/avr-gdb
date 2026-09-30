@@ -157,6 +157,14 @@ OPTS_GDB="
 	--without-libiconv-prefix
 "
 
+# The comparison build is about glibc, not about the TUI. A static link needs a
+# static curses, which the machine may not have, and --enable-tui then turns
+# that into a failed configure -- correct behaviour, but it stops the comparison
+# before it starts.
+if [[ "${LINK_STATIC:-0}" == "1" ]]; then
+    OPTS_GDB="${OPTS_GDB//--enable-tui/--disable-tui}"
+fi
+
 # macOS takes the system zlib; everywhere else the one in the source tree.
 if [[ $OS == "macos" ]]; then
     OPTS_GDB="${OPTS_GDB}
