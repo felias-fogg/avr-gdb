@@ -210,11 +210,11 @@ installPackages()
             fi
         fi
         if [[ ${OS:0:7} == "windows" ]]; then
-            local required=("build-essential" "m4" "ca-certificates" "wget" "make" "mingw-w64" "bzip2" "xz-utils" "autoconf" "texinfo" "libgmp-dev" "libmpfr-dev" "libexpat1-dev")
+            local required=("build-essential" "m4" "ca-certificates" "wget" "make" "mingw-w64" "bzip2" "xz-utils" "autoconf" "texinfo")
         elif [[ $OS == "linux64"  || ( $OS == "linux32" && $ARCH == "arm" ) ]]; then
-            local required=("build-essential" "m4" "ca-certificates" "wget" "make" "bzip2" "xz-utils" "autoconf" "texinfo" "libgmp-dev" "libmpfr-dev" "libexpat1-dev" "libncurses-dev")
+            local required=("build-essential" "m4" "ca-certificates" "wget" "make" "bzip2" "xz-utils" "autoconf" "texinfo" "libncurses-dev" "libgmp-dev" "libmpfr-dev")
         elif [[ $OS == "linux32" &&  $ARCH == "intel" ]]; then
-            local required=("libstdc++6:i386" "libgcc1:i386" "zlib1g:i386" "libncurses5:i386" "gcc-11:i386" "g++-11:i386" "binutils:i386" "cpp-11:i386" "libelf-dev:i386" "freeglut3-dev:i386" "gcc-avr" "avr-libc"  "wget" "make" "bzip2" "xz-utils" "autoconf" "texinfo" "libgmp-dev:i386" "libmpfr-dev:i386" "libexpat1-dev:i386" "libncurses-dev:i386" )
+            local required=("libstdc++6:i386" "libgcc1:i386" "zlib1g:i386" "libncurses5:i386" "gcc-11:i386" "g++-11:i386" "binutils:i386" "cpp-11:i386" "libelf-dev:i386" "freeglut3-dev:i386" "gcc-avr" "avr-libc"  "m4" "wget" "make" "bzip2" "xz-utils" "autoconf" "texinfo" "libncurses-dev:i386" "libgmp-dev:i386" "libmpfr-dev:i386" )
         else
             local required=( "texinfo" )
         fi
@@ -341,20 +341,22 @@ downloadSources()
         if [ ! -f $NAME_GDB.tar.xz ]; then 
 	    wget https://ftpmirror.gnu.org/gdb/$NAME_GDB.tar.xz
         fi
-	if [[ ${OS:0:5} != "linux"  ]]; then
-	        log "$NAME_GMP"
-                if [ ! -f $NAME_GMP.tar.xz ]; then 
-		    wget https://ftpmirror.gnu.org/gmp/$NAME_GMP.tar.xz
-                fi
-		log "$NAME_MPFR"
-                if [ ! -f $NAME_MPFR.tar.xz ]; then
-		    wget https://ftpmirror.gnu.org/mpfr/$NAME_MPFR.tar.xz
-                fi
-		log "${NAME_EXPAT[1]}"
-                if [ ! -f  ${NAME_EXPAT[1]}.tar.xz ]; then
-		    wget https://github.com/libexpat/libexpat/releases/download/${NAME_EXPAT[0]}/${NAME_EXPAT[1]}.tar.xz
-                fi
+	# Only the cross targets build GMP and MPFR from source; on Linux we take the
+	# static archives the distribution ships. See buildGDB.
+	if [[ ${OS:0:5} != "linux" ]]; then
+	    log "$NAME_GMP"
+            if [ ! -f $NAME_GMP.tar.xz ]; then
+	        wget https://ftpmirror.gnu.org/gmp/$NAME_GMP.tar.xz
+            fi
+	    log "$NAME_MPFR"
+            if [ ! -f $NAME_MPFR.tar.xz ]; then
+	        wget https://ftpmirror.gnu.org/mpfr/$NAME_MPFR.tar.xz
+            fi
 	fi
+	log "${NAME_EXPAT[1]}"
+        if [ ! -f  ${NAME_EXPAT[1]}.tar.xz ]; then
+	    wget https://github.com/libexpat/libexpat/releases/download/${NAME_EXPAT[0]}/${NAME_EXPAT[1]}.tar.xz
+        fi
 }
 
 confMake()
@@ -368,6 +370,24 @@ confMake()
 	make -j $JOBCOUNT
 	make install-strip
 	rm -rf *
+}
+
+# Takes the static archive out of a distribution -dev package and puts it where
+# gdb will look for it. The copy is the whole point: in one directory the linker
+# prefers lib*.so over lib*.a, and /usr/lib holds both, so -lgmp would quietly
+# pick up the shared library. In a directory that holds only the archive it has
+# no choice. Asking the compiler for the path keeps this independent of the
+# architecture's multiarch directory.
+collectStaticLib()
+{
+	local archive
+	archive=$(gcc -print-file-name=lib$1.a)
+	if [[ "$archive" == "lib$1.a" ]]; then
+		log "no static lib$1.a on this system -- is lib$1-dev installed?"
+		exit 2
+	fi
+	log "lib$1.a from $archive"
+	cp "$archive" $TMP_DIR/$OS-$ARCH/lib/
 }
 
 patchGDB()
@@ -386,54 +406,72 @@ patchGDB()
 
 buildGDB()
 {
-	log "***GDB (and GMP, MPFR, Expat for Windows/macOS)***"
+	log "***GDB, with GMP, MPFR and Expat linked in statically***"
 	mkdir -p $NAME_GDB/obj-avr
-	if [[ ${OS:0:7} == "windows" ]] || [[ $OS == "macos" ]]; then
-            	log "Extracting libs ..."
+	mkdir -p $TMP_DIR/$OS-$ARCH/lib
+
+	# None of the three may end up as a shared library the user has to have:
+	# libmpfr.so.6 in particular is missing on a minimal system. Curses is the
+	# one exception -- the TUI needs it, it is not built here, and it is there
+	# wherever there is a terminal.
+	#
+	# Where the three come from differs. Expat is built from source everywhere:
+	# it is the only one of them that parses input, so its version should be
+	# ours and the same on all platforms, not whatever the build machine had.
+	# GMP and MPFR are pure arithmetic with a stable ABI, so on Linux the
+	# distribution's own static archives will do -- which saves building GMP,
+	# and in the emulated arm job that is the expensive step. The cross targets
+	# have no such archives and build all three.
+	log "Extracting libs ..."
+	tar xf ${NAME_EXPAT[1]}.tar.xz
+	mkdir -p ${NAME_EXPAT[1]}/obj
+	if [[ ${OS:0:5} != "linux" ]]; then
 		tar xf $NAME_GMP.tar.xz
 		mkdir -p $NAME_GMP/obj
 		tar xf $NAME_MPFR.tar.xz
 		mkdir -p $NAME_MPFR/obj
-		tar xf ${NAME_EXPAT[1]}.tar.xz
-		mkdir -p ${NAME_EXPAT[1]}/obj
 	fi
 
 	if [[ ${OS:0:5} == "linux" ]]; then
-		log "Making for Linux..."
-		cd $NAME_GDB/obj-avr
-		confMake "$PREFIX" "$OPTS_GDB"
-		cd ../../
+		log "GMP and MPFR (static archives from the distribution)..."
+		collectStaticLib gmp
+		collectStaticLib mpfr
+		# Only the library directory is ours; the headers stay where the
+		# distribution put them, which is what --with-*-lib is for.
+		OPTS_LIBS="--with-gmp-lib=${TMP_DIR}/${OS}-${ARCH}/lib --with-mpfr-lib=${TMP_DIR}/${OS}-${ARCH}/lib"
 	else
 		log "GMP..."
 		cd $NAME_GMP/obj
 		confMake $TMP_DIR/$OS-$ARCH "--enable-static --disable-shared ${ASSEMBLY}" $HOST
 		cd ../../
-		
+
 		log "MPFR..."
 		cd $NAME_MPFR/obj
 		confMake $TMP_DIR/$OS-$ARCH "--with-gmp=${TMP_DIR}/${OS}-${ARCH} --disable-shared --enable-static" $HOST
 		cd ../../
 
-		log "Expat..."
-		cd ${NAME_EXPAT[1]}/obj
-                if [[ $OS == "macos" ]]; then 
-		    confMake $TMP_DIR/$OS-$ARCH "--disable-shared --enable-static" $HOST
-                else
-		    confMake $TMP_DIR/$OS-$ARCH "--disable-shared --enable-static" $HOST "../conftools/config.guess"
-                fi
-		cd ../../
-
-                if  [[ $OS == "macos" ]]; then
-                    brew uninstall --ignore-dependencies zstd || echo "OK"
-                    brew uninstall --ignore-dependencies gettext || echo "OK"
-                    brew uninstall --ignore-dependencies xz || echo "OK"
-                fi
-                
-		log "GDB..."
-		cd $NAME_GDB/obj-avr
-		confMake "$PREFIX" "--enable-static --disable-shared --with-gmp=${TMP_DIR}/${OS}-${ARCH} --with-mpfr=${TMP_DIR}/${OS}-${ARCH} --with-libexpat-prefix=${TMP_DIR}/${OS}-${ARCH} ${OPTS_GDB}" $HOST
-		cd ../../
+		OPTS_LIBS="--with-gmp=${TMP_DIR}/${OS}-${ARCH} --with-mpfr=${TMP_DIR}/${OS}-${ARCH}"
 	fi
+
+	log "Expat..."
+	cd ${NAME_EXPAT[1]}/obj
+	if [[ $OS == "macos" ]]; then
+	    confMake $TMP_DIR/$OS-$ARCH "--disable-shared --enable-static" $HOST
+	else
+	    confMake $TMP_DIR/$OS-$ARCH "--disable-shared --enable-static" $HOST "../conftools/config.guess"
+	fi
+	cd ../../
+
+	if [[ $OS == "macos" ]]; then
+	    brew uninstall --ignore-dependencies zstd || echo "OK"
+	    brew uninstall --ignore-dependencies gettext || echo "OK"
+	    brew uninstall --ignore-dependencies xz || echo "OK"
+	fi
+
+	log "GDB..."
+	cd $NAME_GDB/obj-avr
+	confMake "$PREFIX" "--enable-static --disable-shared ${OPTS_LIBS} --with-libexpat-prefix=${TMP_DIR}/${OS}-${ARCH} ${OPTS_GDB}" $HOST
+	cd ../../
 
 	# For some reason we need some random command here otherwise
 	# the script exits with no error when FOR_WINX64=0

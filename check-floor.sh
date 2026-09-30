@@ -7,7 +7,7 @@
 #
 #   ELF     the highest glibc version referenced   readelf -V
 #   Mach-O  the deployment target                  vtool -show-build
-#   PE      the subsystem version in the header    objdump -p
+#   PE      the DLLs and functions it imports      objdump -p
 #
 # Linux is the only one of the three with no way to declare that floor in the
 # build; it falls out of the distribution one builds on. Hence this script: what
@@ -80,16 +80,53 @@ MACOSX_DEPLOYMENT_TARGET set for the whole build, not just for gdb?" ;;
     ;;
 
   *PE*|*MS\ Windows*)
-    echo "--- subsystem version (the Windows floor) ---"
     OD=objdump
     command -v x86_64-w64-mingw32-objdump >/dev/null && OD=x86_64-w64-mingw32-objdump
+
+    echo "--- subsystem version in the header (informational only) ---"
     "$OD" -p "$BIN" | grep -iE 'Major(OSystem|Subsystem)Version|Minor(OSystem|Subsystem)Version' \
       || echo "(could not read the PE header with $OD)"
-    # Reported, not enforced: the number mingw-w64 writes depends on its
-    # version, and the real floor is set by _WIN32_WINNT in the build. Enforcing
-    # a value here would be guessing at the toolchain rather than checking the
-    # client.
-    echo "declared floor in the build: _WIN32_WINNT=0x0600 (Vista); asked here: $FLOOR"
+    # This number is not the floor, however much it looks like one. It is a
+    # default the linker stamps, and the default differs per target: our two
+    # clients are built from the same sources with the same _WIN32_WINNT, and
+    # the 32-bit one says 4.0 while the 64-bit one says 5.2 -- which is simply
+    # the oldest Windows that ever had the respective architecture. The loader
+    # only refuses a binary whose number is HIGHER than the running Windows, so
+    # a low stamp can never make a program portable; it just fails to say
+    # anything. Comparing it against a floor would therefore pass every time.
+    #
+    # What does decide the floor is the import table: a function that Windows 7
+    # introduced makes the client refuse to start on Vista, no matter what any
+    # header field claims. So that is what we look at.
+
+    echo "--- DLLs it needs at start ---"
+    "$OD" -p "$BIN" | awk '/DLL Name:/ {print "  " $3}' | sort -u
+
+    # Two DLL names are floors in themselves:
+    #   api-ms-win-*     the UCRT -- Windows 10, or a redistributable before it
+    #   kernelbase.dll   Windows 7
+    # mingw-w64 normally links the old msvcrt.dll, which every Windows has.
+    DLLS=$("$OD" -p "$BIN" | awk '/DLL Name:/ {print tolower($3)}' | sort -u)
+    case "$DLLS" in
+      *api-ms-win-crt*) fail "imports the UCRT (api-ms-win-crt-*) -- that is a \
+Windows 10 floor unless the user installs a redistributable" ;;
+    esac
+    case "$DLLS" in
+      *kernelbase.dll*) fail "imports kernelbase.dll -- that DLL arrived with \
+Windows 7, so the client cannot start on Vista" ;;
+    esac
+
+    # And a look at the other end: do we actually use anything newer than XP?
+    # Purely informational -- finding nothing would not prove the client runs on
+    # XP, only that these particular names are absent. But finding something
+    # confirms that _WIN32_WINNT=0x0600 is a real requirement and not a habit.
+    echo "--- functions that are Vista or newer (informational) ---"
+    "$OD" -p "$BIN" \
+      | grep -oE '\b(GetTickCount64|InitializeConditionVariable|SleepConditionVariableCS|InitializeSRWLock|AcquireSRWLockExclusive|CreateSymbolicLinkW|GetFinalPathNameByHandleW|InetNtopW|CancelIoEx|GetThreadId)\b' \
+      | sort -u | sed 's/^/  /' || echo "  (none of the names we look for)"
+
+    echo "OK: nothing in the import table of $BIN demands more than Windows $FLOOR"
+    exit 0
     ;;
 
   *)

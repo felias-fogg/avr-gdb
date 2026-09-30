@@ -129,7 +129,7 @@ jobs:
           tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz tool
 
       - name: what it demands of the system
-        run: ./check-floor.sh tool/avr-gdb 2.35
+        run: ./check-floor.sh tool/avr-gdb 2.34
 
       - name: upload
         uses: actions/upload-artifact@v4
@@ -162,7 +162,7 @@ jobs:
           tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz tool
 
       - name: what it demands of the system
-        run: ./check-floor.sh tool/avr-gdb 2.35
+        run: ./check-floor.sh tool/avr-gdb 2.34
 
       - name: upload
         uses: actions/upload-artifact@v4
@@ -195,7 +195,7 @@ jobs:
           tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz tool
 
       - name: what it demands of the system
-        run: ./check-floor.sh tool/avr-gdb 2.35
+        run: ./check-floor.sh tool/avr-gdb 2.34
 
       - name: upload
         uses: actions/upload-artifact@v4
