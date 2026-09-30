@@ -100,26 +100,45 @@ if [[ ${OS:0:5} == "linux" ]]; then
 fi
 export CXXFLAGS="${CXXFLAGS} -D_WIN32_WINNT=0x0600"
 
-if [[ $OS == "macos" ]]; then
-    OPTS_GDB="
-    	--target=avr
-	--with-static-standard-libraries
-	--with-expat
-        --without-python
-        --without-guile
-        --with-system-zlib
-    "
-else    
-    OPTS_GDB="
+# Everything gdb's configure would otherwise decide by looking at what happens
+# to be installed on the build machine. Pinned here, so that two machines give
+# the same binary: the ARM client came out without debuginfod only because that
+# host did not have the library, not because anybody chose it.
+#
+# The list matches what the clients already are: the configuration gdb carries
+# for 'show configuration' says --without-curses, --without-lzma, --without-
+# xxhash, --without-babeltrace, --without-debuginfod and
+# --disable-source-highlight for the Linux ARM client. So this pins the state,
+# it does not change it. Adding the TUI back is a decision of its own -- it
+# needs curses, and then curses needs linking in a way that survives a
+# different machine.
+#
+# --without-libiconv-prefix means gdb uses glibc's iconv. That is what loads
+# gconv/ISO8859-1.so through dlopen, which is fatal in a statically linked
+# binary whose glibc differs from the one on the running system. It is spelled
+# out here so the trap is visible rather than implied.
+OPTS_GDB="
 	--target=avr
 	--with-static-standard-libraries
 	--with-expat
-        --without-python
-        --without-guile
-    "
-fi
+	--without-curses
+	--without-python
+	--without-guile
+	--without-debuginfod
+	--without-xxhash
+	--without-lzma
+	--without-zstd
+	--without-babeltrace
+	--disable-source-highlight
+	--without-libiconv-prefix
+"
 
-# --disable-source-highlight
+# macOS takes the system zlib; everywhere else the one in the source tree.
+if [[ $OS == "macos" ]]; then
+    OPTS_GDB="${OPTS_GDB}
+	--with-system-zlib
+"
+fi
 
 TMP_DIR=${CWD}/tmp
 LOG_DIR=${CWD}
