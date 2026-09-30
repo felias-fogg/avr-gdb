@@ -361,6 +361,14 @@ downloadSources()
 
 confMake()
 {
+        # $3 is the host (possibly empty), $4 the path to a config.guess. An
+        # empty unquoted $3 at the call site shifts $4 into its place, and
+        # configure then reads a file name as a host type and says so in a way
+        # that takes a while to understand. Cheaper to say it here.
+        if [[ -n "$3" ]] && [[ ${3:0:2} != "--" ]]; then
+            log "confMake: '$3' is not a configure option -- quote \$HOST at the call site"
+            exit 2
+        fi
         if [[ -z "$4" ]]; then
             echo "$1 $2 $3"
             ../configure --prefix=$1 $2 $3
@@ -455,10 +463,14 @@ buildGDB()
 
 	log "Expat..."
 	cd ${NAME_EXPAT[1]}/obj
-	if [[ $OS == "macos" ]]; then
-	    confMake $TMP_DIR/$OS-$ARCH "--disable-shared --enable-static" $HOST
+	# --build is only of interest where we cross-compile; a native build finds
+	# out by itself. And it has to be passed as the fourth argument, so $HOST
+	# must be quoted: empty and unquoted it disappears, and then the path to
+	# config.guess slides into its place and configure reads it as a host type.
+	if [[ ${OS:0:5} == "linux" ]] || [[ $OS == "macos" ]]; then
+	    confMake $TMP_DIR/$OS-$ARCH "--disable-shared --enable-static" "$HOST"
 	else
-	    confMake $TMP_DIR/$OS-$ARCH "--disable-shared --enable-static" $HOST "../conftools/config.guess"
+	    confMake $TMP_DIR/$OS-$ARCH "--disable-shared --enable-static" "$HOST" "../conftools/config.guess"
 	fi
 	cd ../../
 
