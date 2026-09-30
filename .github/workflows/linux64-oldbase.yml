@@ -1,17 +1,17 @@
 # Builds the 64-bit Intel Linux client on the oldest runner image GitHub still
-# offers, so that it runs on every glibc from that one upwards rather than only
-# on the newest. glibc is backwards compatible: built against 2.35 it runs on
-# 2.39, never the other way round.
+# offers, and then checks it on the newest one. That split is the point: glibc
+# is backwards compatible, so a client built against 2.35 has to keep working on
+# 2.39, and only running it there shows whether it does.
 #
-# Separate from the release workflow on purpose, so it can be tried without
-# touching a release.
+# The checks all live in the second job, because they are properties of the
+# finished client, not of the machine that produced it.
 #
-# Two things to know about this choice. GitHub retires old runner images --
-# ubuntu-20.04 went in 2025 and this one will follow -- and when it does, the
-# requirement rises without anybody noticing. That is what the glibc check
-# below is for: it fails loudly instead. If a lower floor than the oldest
-# runner is ever wanted, the build has to move into a container, and then the
-# package sources of an end-of-life Debian become the next problem.
+# One thing to know: GitHub retires old runner images -- ubuntu-20.04 went in
+# 2025 and this one will follow -- and when it does, the requirement rises
+# without anybody noticing. That is what the glibc check is for. Going lower
+# than the oldest runner means building in a container, and then the package
+# sources of an end-of-life Debian become the next problem: bullseye-security
+# is already served as an index whose pool is gone.
 name: Build Linux64 on an old base
 
 on:
@@ -21,7 +21,7 @@ on:
         description: >
           Link glibc statically. Not a way to build a client -- a way to check
           that the tests below actually catch it when somebody does. Expect the
-          run to go red.
+          verify job to go red.
         type: boolean
         default: false
 
@@ -31,7 +31,8 @@ env:
   MAX_GLIBC_MINOR: 35
 
 jobs:
-  build-x86_64-linux-gnu-oldbase:
+  build:
+    name: build against the old glibc
     runs-on: ubuntu-22.04
     steps:
       - name: checkout repo
@@ -46,19 +47,55 @@ jobs:
           sudo env LINK_STATIC=${{ inputs.link_static && '1' || '0' }} \
                ./avr-gdb-build.sh linux64 intel
 
+      - name: what came out
+        run: |
+          B=build/avr-linux64-intel/bin/avr-gdb
+          file "$B"
+          ldd "$B" || echo "(no dynamic dependencies -- this is a static build)"
+
+      - name: package
+        run: |
+          sudo rm -rf tool
+          sudo mkdir tool
+          sudo mv build/avr-linux64-intel/bin/avr-gdb tool
+          sudo mv build/avr-linux64-intel/package.json tool
+          tar -cvz --exclude="*DS_Store" --exclude="*/._*" \
+              -f x86_64-linux-gnu-oldbase.tar.gz tool
+
+      - name: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: x86_64-linux-gnu-oldbase
+          path: x86_64-linux-gnu-oldbase.tar.gz
+
+  verify:
+    name: check it on a newer glibc
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - name: which glibc are we checking against
+        run: ldd --version | head -1
+
+      - name: fetch what was built
+        uses: actions/download-artifact@v4
+        with:
+          name: x86_64-linux-gnu-oldbase
+
+      - name: unpack
+        run: tar xzf x86_64-linux-gnu-oldbase.tar.gz
+
       - name: what the binary needs
         # Advisory during the static experiment only, so that the run carries on
         # to the charset test. Otherwise this step would catch the static build
         # first and we would never learn whether the other check works too.
         continue-on-error: ${{ inputs.link_static }}
         run: |
-          B=build/avr-linux64-intel/bin/avr-gdb
-          file "$B"
-          ldd "$B"
-          MAX=$(objdump -T "$B" | grep -oE "GLIBC_2\.[0-9]+" | sort -uV | tail -1)
+          file tool/avr-gdb
+          ldd tool/avr-gdb || echo "(no dynamic dependencies)"
+          MAX=$(objdump -T tool/avr-gdb | grep -oE "GLIBC_2\.[0-9]+" | sort -uV | tail -1)
           echo "highest glibc requirement: ${MAX:-none}"
           if [ -z "$MAX" ]; then
-            echo "::error::no GLIBC_ references at all -- linked statically again?"
+            echo "::error::no GLIBC_ references at all -- linked statically?"
             exit 1
           fi
           if [ "${MAX#GLIBC_2.}" -gt "${MAX_GLIBC_MINOR}" ]; then
@@ -72,12 +109,14 @@ jobs:
           # parts: an ELF file, so there is a target charset to set up; a
           # language set, which discards what was cached; and then an
           # expression, because the charset is only set up when one is
-          # evaluated. Any of the three alone gets through.
+          # evaluated. Any of the three alone gets through. And it takes this
+          # job: the glibc here is newer than the one it was built against,
+          # which is the difference the crash needs.
           sudo apt-get update -qq
           sudo apt-get install -y -qq gcc-avr avr-libc
           printf "int main(void){return 0;}\n" > probe.c
           avr-gcc -mmcu=atmega328p -O1 -g -o probe.elf probe.c
-          build/avr-linux64-intel/bin/avr-gdb -nx -batch probe.elf \
+          tool/avr-gdb -nx -batch probe.elf \
             -ex "set language c" \
             -ex "print (char)65" \
             -ex "set \$ITM_BASE = 0xE0000000" \
@@ -85,7 +124,7 @@ jobs:
 
       - name: are the pinned options really in effect
         run: |
-          CONF=$(build/avr-linux64-intel/bin/avr-gdb -nx -batch -ex "show configuration")
+          CONF=$(tool/avr-gdb -nx -batch -ex "show configuration")
           # Printed either way: when this fails, the configuration is what
           # answers the question, and hunting for it afterwards costs a run.
           printf '%s\n' "$CONF"
@@ -102,19 +141,4 @@ jobs:
           # The TUI is kept for the people who want it, so it gets looked at.
           # In a build without it the command does not exist and gdb exits
           # non-zero, which is exactly the report we want.
-          build/avr-linux64-intel/bin/avr-gdb -nx -batch -ex "help layout"
-
-      - name: package
-        run: |
-          sudo rm -rf tool
-          sudo mkdir tool
-          sudo mv build/avr-linux64-intel/bin/avr-gdb tool
-          sudo mv build/avr-linux64-intel/package.json tool
-          tar -cvz --exclude="*DS_Store" --exclude="*/._*" \
-              -f x86_64-linux-gnu-oldbase.tar.gz tool
-
-      - name: upload
-        uses: actions/upload-artifact@v4
-        with:
-          name: x86_64-linux-gnu-oldbase
-          path: x86_64-linux-gnu-oldbase.tar.gz
+          tool/avr-gdb -nx -batch -ex "help layout"

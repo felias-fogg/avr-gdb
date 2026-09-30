@@ -110,7 +110,9 @@ PREFIX=${BASE}avr-$OS-$ARCH
 # compatible, so a client built against 2.31 runs on 2.39, never the reverse.
 # LINK_STATIC=1 brings the old behaviour back, for comparing the two.
 if [[ ${OS:0:5} == "linux" ]] && [[ "${LINK_STATIC:-0}" == "1" ]]; then
-    log "LINK_STATIC=1: linking glibc statically -- see the note above"
+    # echo, not log: log() is defined further down in this file, and the
+    # script runs with set -e.
+    echo "LINK_STATIC=1: linking glibc statically -- see the note above"
     export CFLAGS="-static --static"
     export CXXFLAGS="${CFLAGS}"
 fi
