@@ -29,6 +29,13 @@ jobs:
   build-x86_64-apple-darwin:
     needs: check
     runs-on: macos-14-large
+    env:
+      # Without this clang takes the version of the build machine,
+      # and the client then refuses to start on anything older.
+      # Set for the whole job: gmp, mpfr and expat are built by the
+      # same script, and a target that covers only some of the parts
+      # covers nothing.
+      MACOSX_DEPLOYMENT_TARGET: "10.15"
     steps:
       - name: checkout repo
         uses: actions/checkout@v5
@@ -48,6 +55,9 @@ jobs:
           mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json tool
           tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz tool
 
+      - name: what it demands of the system
+        run: ./check-floor.sh tool/avr-gdb 10.15
+
       - name: upload
         uses: actions/upload-artifact@v4
         with:
@@ -59,6 +69,13 @@ jobs:
   build-arm64-apple-darwin:
     needs: check
     runs-on: macos-14
+    env:
+      # Without this clang takes the version of the build machine,
+      # and the client then refuses to start on anything older.
+      # Set for the whole job: gmp, mpfr and expat are built by the
+      # same script, and a target that covers only some of the parts
+      # covers nothing.
+      MACOSX_DEPLOYMENT_TARGET: "11.0"
     steps:
       - name: checkout repo
         uses: actions/checkout@v5
@@ -78,6 +95,9 @@ jobs:
           mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json tool
           tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz tool
 
+      - name: what it demands of the system
+        run: ./check-floor.sh tool/avr-gdb 11.0
+
       - name: upload
         uses: actions/upload-artifact@v4
         with:
@@ -88,7 +108,7 @@ jobs:
 
   build-x86_64-linux-gnu:
     needs: check
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     steps:
       - name: checkout repo
         uses: actions/checkout@v5
@@ -107,6 +127,9 @@ jobs:
           sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb tool
           sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json tool
           tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz tool
+
+      - name: what it demands of the system
+        run: ./check-floor.sh tool/avr-gdb 2.35
 
       - name: upload
         uses: actions/upload-artifact@v4
@@ -138,6 +161,9 @@ jobs:
           sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json tool
           tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz tool
 
+      - name: what it demands of the system
+        run: ./check-floor.sh tool/avr-gdb 2.35
+
       - name: upload
         uses: actions/upload-artifact@v4
         with:
@@ -148,7 +174,7 @@ jobs:
 
   build-aarch64-linux-gnu:
     needs: check
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-22.04-arm
     steps:
       - name: checkout repo
         uses: actions/checkout@v5
@@ -167,6 +193,9 @@ jobs:
           sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb tool
           sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json tool
           tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz tool
+
+      - name: what it demands of the system
+        run: ./check-floor.sh tool/avr-gdb 2.35
 
       - name: upload
         uses: actions/upload-artifact@v4
@@ -194,7 +223,11 @@ jobs:
         with:
           cpu: arm1176
           import_github_env: true
-          base_image: raspios_lite:latest
+          # Pinned, and a Raspberry Pi OS one: Debian took armv6 out of
+          # armhf, so its images are either armel or armv7 and neither
+          # runs where this client has to run. :latest would let the
+          # floor move on its own.
+          base_image: raspios_lite:2023-05-03
           copy_artifact_path: arm-linux-gnueabihf.tar.gz
           image_additional_mb: 2048
           commands: |
@@ -206,6 +239,11 @@ jobs:
             sudo cp ./build/avr-${OS}-${ARCH}/bin/avr-gdb tool
             sudo cp ./build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json tool
             tar cvz --exclude="*DS_Store" --exclude="*/._*" -f ${PREF}.tar.gz tool
+      - name: what it demands of the system
+        run: |
+          tar xzf ${{ env.PREF }}.tar.gz
+          ./check-floor.sh tool/avr-gdb 2.31 --armv6-hardfloat
+
       - name: upload
         uses: actions/upload-artifact@v4
         with:
@@ -236,6 +274,9 @@ jobs:
           sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json tool
           tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz tool
 
+      - name: what it demands of the system
+        run: ./check-floor.sh tool/avr-gdb.exe 6.0
+
       - name: upload
         uses: actions/upload-artifact@v4
         with:
@@ -265,6 +306,9 @@ jobs:
           sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/bin/avr-gdb.exe tool
           sudo mv build/avr-${{ env.OS }}-${{ env.ARCH }}/package.json tool
           tar -cvz --exclude="*DS_Store" --exclude="*/._*" -f ${{ env.PREF }}.tar.gz tool
+
+      - name: what it demands of the system
+        run: ./check-floor.sh tool/avr-gdb.exe 6.0
 
       - name: upload
         uses: actions/upload-artifact@v4

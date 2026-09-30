@@ -116,7 +116,14 @@ if [[ ${OS:0:5} == "linux" ]] && [[ "${LINK_STATIC:-0}" == "1" ]]; then
     export CFLAGS="-static --static"
     export CXXFLAGS="${CFLAGS}"
 fi
-export CXXFLAGS="${CXXFLAGS} -D_WIN32_WINNT=0x0600"
+# Windows says which version it targets the same way macOS does with a
+# deployment target, only through the headers: _WIN32_WINNT decides which API
+# functions are visible at all. 0x0600 is Vista, and that is the floor of the
+# Windows clients. The linker writes a second number into the PE header, the
+# subsystem version, which 'objdump -p' reports.
+if [[ ${OS:0:7} == "windows" ]]; then
+    export CXXFLAGS="${CXXFLAGS} -D_WIN32_WINNT=0x0600"
+fi
 
 # Everything gdb's configure would otherwise decide by looking at what happens
 # to be installed on the build machine. Pinned here, so that two machines give
@@ -157,11 +164,16 @@ OPTS_GDB="
 	--without-libiconv-prefix
 "
 
-# The comparison build is about glibc, not about the TUI. A static link needs a
-# static curses, which the machine may not have, and --enable-tui then turns
-# that into a failed configure -- correct behaviour, but it stops the comparison
-# before it starts.
-if [[ "${LINK_STATIC:-0}" == "1" ]]; then
+# Two cases where the TUI has to go, both because it needs curses and curses is
+# not there. Asking for it anyway is a failed configure, which is the right
+# behaviour and the wrong moment.
+#
+#  - Windows: the cross build installs mingw-w64 and no curses for it. Until
+#    that changes, the Windows clients have no TUI -- as they never had, only
+#    now it is said out loud instead of happening quietly.
+#  - LINK_STATIC=1: a static link needs a static curses, which the build machine
+#    may not have. That comparison is about glibc, not about the TUI.
+if [[ ${OS:0:7} == "windows" ]] || [[ "${LINK_STATIC:-0}" == "1" ]]; then
     OPTS_GDB="${OPTS_GDB//--enable-tui/--disable-tui}"
 fi
 
