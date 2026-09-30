@@ -18,21 +18,22 @@ on:
     inputs:
       base_image:
         description: >
-          Which base image. The names come from download_image.sh in the action
-          and have to be spelled exactly, date part included -- the armhf ones
-          are raspi_1_bookworm:20231109 (Debian bookworm, glibc 2.36),
-          raspi_1_bullseye:20220121 (2.31), dietpi:rpi_armv6_bookworm (2.36),
-          raspios_lite:2023-05-03 (Pi OS bullseye, 2.31),
-          raspios_lite:2021-03-04 and a few older ones. Anything ending in
-          :latest moves by itself and does not belong in a release.
+          Which base image. It has to be a Raspberry Pi OS one: Debian took
+          armv6 out of armhf, so its raspi_1_* images are armel -- soft float,
+          different dynamic linker -- and its armhf images are armv7. Neither
+          runs where the current client runs. Pinned Pi OS names:
+          raspios_lite:2023-05-03 (bullseye, glibc 2.31),
+          raspios_lite:2022-04-04, raspios_lite:2021-10-30. Anything ending in
+          :latest moves by itself. For a pinned bookworm base there is no name,
+          only a https:// URL to a dated image, which this input also accepts.
         type: string
-        default: "raspi_1_bookworm:20231109"
+        default: "raspios_lite:2023-05-03"
       max_glibc_minor:
         description: >
-          Highest glibc 2.x the finished client may require. Bookworm is 36,
-          bullseye is 31. Raise it for an attempt, not as a habit.
+          Highest glibc 2.x the finished client may require. Pi OS bullseye is
+          31, bookworm is 36. Raise it for an attempt, not as a habit.
         type: string
-        default: "36"
+        default: "31"
 
 jobs:
   build:
@@ -75,6 +76,24 @@ jobs:
           file tool/avr-gdb
           echo "--- dynamic dependencies ---"
           readelf -d tool/avr-gdb | grep NEEDED || echo "(none -- static build)"
+          echo "--- ABI: has to stay armv6 hard-float ---"
+          # Measured, not assumed. Raspberry Pi OS targets armv6 with VFP
+          # arguments, which runs on every Pi from the first onwards. A Debian
+          # armhf base would give armv7 and drop the Pi 1; a Debian armel base
+          # would give soft float and a different interpreter, and then the
+          # client does not start on Pi OS at all. Both mistakes are silent in
+          # a build log and loud in a bug report.
+          readelf -A tool/avr-gdb | grep -E "Tag_CPU_arch|Tag_ABI_VFP_args" || true
+          readelf -l tool/avr-gdb | grep -i interpreter || echo "(no interpreter -- static)"
+          if ! readelf -A tool/avr-gdb | grep -q "Tag_CPU_arch: v6"; then
+            echo "::error::not built for armv6 -- this would drop the Pi 1 and Zero"
+            exit 1
+          fi
+          if ! readelf -A tool/avr-gdb | grep -q "Tag_ABI_VFP_args: VFP registers"; then
+            echo "::error::not hard-float -- this would not run on Raspberry Pi OS"
+            exit 1
+          fi
+
           echo "--- glibc ---"
           MAX=$(readelf -V tool/avr-gdb | grep -o "GLIBC_2\.[0-9]*" | sort -uV | tail -1)
           echo "highest glibc requirement: ${MAX:-none}"
