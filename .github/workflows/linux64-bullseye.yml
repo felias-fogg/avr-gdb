@@ -26,6 +26,14 @@ jobs:
             -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
             debian:bullseye-slim bash -euxc '
               ldd --version | head -1
+              # One source, named here, so the container does not depend on what
+              # the image happens to carry. bullseye is still on the main mirror
+              # but bullseye-security is not, and a suite that fails to update
+              # leaves a stale index behind, which is what makes apt say it
+              # cannot fetch an archive it thinks exists.
+              echo "deb http://deb.debian.org/debian bullseye main" > /etc/apt/sources.list
+              rm -f /etc/apt/sources.list.d/*
+              apt-get -o Acquire::Check-Valid-Until=false update
               ./avr-gdb-build.sh linux64 intel
               # do not let a failed chown hide why the build failed
               chown -R "$HOST_UID:$HOST_GID" build tmp || true
