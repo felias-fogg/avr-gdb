@@ -18,10 +18,15 @@ on:
     inputs:
       base_image:
         description: >
-          Base image for arm-runner-action. Examples: raspi_1_bookworm,
-          raspi_1_bullseye, raspios_lite:2023-05-03. Avoid anything :latest.
+          Which base image. The names come from download_image.sh in the action
+          and have to be spelled exactly, date part included -- the armhf ones
+          are raspi_1_bookworm:20231109 (Debian bookworm, glibc 2.36),
+          raspi_1_bullseye:20220121 (2.31), dietpi:rpi_armv6_bookworm (2.36),
+          raspios_lite:2023-05-03 (Pi OS bullseye, 2.31),
+          raspios_lite:2021-03-04 and a few older ones. Anything ending in
+          :latest moves by itself and does not belong in a release.
         type: string
-        default: raspi_1_bookworm
+        default: "raspi_1_bookworm:20231109"
       max_glibc_minor:
         description: >
           Highest glibc 2.x the finished client may require. Bookworm is 36,
