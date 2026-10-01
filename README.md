@@ -10,8 +10,8 @@ The result of the latest CI run, which builds binaries for all platforms, can be
 | -------------------------------- | ------------------------------------------------------------ |
 | Windows / Intel / 32 bit         | Windows Vista                                                |
 | Windows / Intel / 64 bit         | Windows Vista                                                |
-| Linux / Intel / 32 bit (armv6hf) | GLIBC 2.31 (Pi OS bullseye)                                  |
-| Linux / Intel / 64 bit           | GLIBC 2.34 (Ubuntu 22.04 / Debian 12 / Pi OS bookworm / RHEL 9) |
+| Linux / Intel / 32 bit (armv6hf) | GLIBC 2.30 (Pi OS bullseye)                                  |
+| Linux / Intel / 64 bit           | GLIBC 2.34 (Ubuntu 22.04 / Debian 12 / RHEL 9)               |
 | Linux / ARM / 32 bit             | GLIBC 2.34 (Ubuntu 22.04 / Debian 12 / Pi OS bookworm / RHEL 9) |
 | Linux / ARM / 64 bit             | GLIBC 2.34 (Ubuntu 22.04 / Debian 12 / Pi OS bookworm / RHEL 9) |
 | macOS / Intel / 64 bit           | macOS 10.15                                                  |
